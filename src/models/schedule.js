@@ -1,7 +1,5 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
+"use strict";
+const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class Schedule extends Model {
     /**
@@ -10,20 +8,30 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      Schedule.belongsTo(models.Allcode, {foreignKey: 'timeType', targetKey: 'keyMap', as: 'timeTypeData'})
-      Schedule.belongsTo(models.User, {foreignKey: 'doctorId', targetKey: 'id', as: 'doctorData'})
-
+      Schedule.belongsTo(models.Datacode, {
+        foreignKey: "timeType",
+        targetKey: "keyMap",
+        as: "timeTypeData",
+      });
+      Schedule.belongsTo(models.User, {
+        foreignKey: "doctorId",
+        targetKey: "id",
+        as: "doctorData",
+      });
     }
-  };
-  Schedule.init({
-    currentNumber: DataTypes.INTEGER,
-    maxNumber: DataTypes.INTEGER,
-    date: DataTypes.STRING,
-    timeType: DataTypes.STRING,
-    doctorId: DataTypes.INTEGER,
-  }, {
-    sequelize,
-    modelName: 'Schedule',
-  });
+  }
+  Schedule.init(
+    {
+      currentNumber: DataTypes.INTEGER,
+      maxNumber: DataTypes.INTEGER,
+      date: DataTypes.STRING,
+      timeType: DataTypes.STRING,
+      doctorId: DataTypes.INTEGER,
+    },
+    {
+      sequelize,
+      modelName: "Schedule",
+    }
+  );
   return Schedule;
 };

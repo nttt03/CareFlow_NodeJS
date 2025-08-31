@@ -1,35 +1,42 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
+"use strict";
+const { Model } = require("sequelize");
+
 module.exports = (sequelize, DataTypes) => {
   class Doctor_Infor extends Model {
     static associate(models) {
-      Doctor_Infor.belongsTo(models.User, {foreignKey: 'doctorId'})
-      Doctor_Infor.belongsTo(models.Allcode, {foreignKey: 'priceId', targetKey: 'keyMap', as: 'priceTypeData'})
-      Doctor_Infor.belongsTo(models.Allcode, {foreignKey: 'provinceId', targetKey: 'keyMap', as: 'provinceTypeData'})
-      Doctor_Infor.belongsTo(models.Allcode, {foreignKey: 'paymentId', targetKey: 'keyMap', as: 'paymentTypeData'})
-
-      Doctor_Infor.belongsTo(models.Specialty, {foreignKey: 'specialtyId'});
-      Doctor_Infor.belongsTo(models.Booking, {foreignKey: 'doctorId', targetKey: 'doctorId', as: 'doctorInfoData'});
+      Doctor_Infor.belongsTo(models.User, {
+        foreignKey: "doctorId",
+        as: "doctor",
+      });
+      Doctor_Infor.belongsTo(models.Specialty, {
+        foreignKey: "specialtyId",
+        as: "specialty",
+      });
+      Doctor_Infor.belongsTo(models.Hospital, {
+        foreignKey: "hospitalId",
+        as: "hospital",
+      });
+      Doctor_Infor.hasMany(models.Booking, {
+        foreignKey: "doctorId",
+        as: "doctorInfoData",
+      });
     }
-  };
-  
+  }
+
   Doctor_Infor.init({
-    doctorId: DataTypes.INTEGER,
-    specialtyId: DataTypes.INTEGER,
-    clinicId: DataTypes.INTEGER,
-    priceId: DataTypes.STRING,
-    provinceId: DataTypes.STRING,
-    paymentId: DataTypes.STRING,
-    addressClinic: DataTypes.STRING,
-    nameClinic: DataTypes.STRING,
+    doctorId: {
+      type: DataTypes.INTEGER,
+    },
+    specialtyId: {
+      type: DataTypes.INTEGER,
+    },
+    hospitalId: {
+      type: DataTypes.INTEGER,
+    },
+    price: DataTypes.DECIMAL(10, 2),
     note: DataTypes.STRING,
     count: DataTypes.INTEGER,
-  }, {
-    sequelize,
-    modelName: 'Doctor_Infor',
-    freezeTableName: true
+    rating: DataTypes.STRING,
   });
   return Doctor_Infor;
 };

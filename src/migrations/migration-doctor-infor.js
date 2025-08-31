@@ -1,66 +1,50 @@
-'use strict';
-
-const { toDefaultValue } = require("sequelize/lib/utils");
+"use strict";
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('doctor_infor', {
+    await queryInterface.createTable("Doctor_Infor", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
       },
       doctorId: {
         type: Sequelize.INTEGER,
-        allowNull: false
       },
       specialtyId: {
         type: Sequelize.INTEGER,
       },
-      clinicId: {
+      hospitalId: {
         type: Sequelize.INTEGER,
       },
-      priceId: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
-      provinceId: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
-      paymentId: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
-      addressClinic: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
-      nameClinic: {
-        type: Sequelize.STRING,
-        allowNull: false
+      price: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: true,
       },
       note: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: true,
       },
       count: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
-        allowNull: false,
       },
-
+      rating: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
-      }
+        type: Sequelize.DATE,
+      },
     });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('doctor_infor');
-  }
+    await queryInterface.dropTable("Doctor_Infor");
+  },
 };
