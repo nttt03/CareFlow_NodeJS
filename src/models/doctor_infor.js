@@ -37,6 +37,9 @@ module.exports = (sequelize, DataTypes) => {
     note: DataTypes.STRING,
     count: DataTypes.INTEGER,
     rating: DataTypes.STRING,
+  }, {
+    sequelize,
+    modelName: "Doctor_Infor"
   });
   return Doctor_Infor;
 };

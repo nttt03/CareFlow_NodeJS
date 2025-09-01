@@ -15,12 +15,12 @@ module.exports = (sequelize, DataTypes) => {
       });
 
       // Các liên kết hiện có
-      User.belongsTo(models.Stackacode, {
+      User.belongsTo(models.Datacode, {
         foreignKey: "positionId",
         targetKey: "keyMap",
         as: "positionData",
       });
-      User.belongsTo(models.Stackacode, {
+      User.belongsTo(models.Datacode, {
         foreignKey: "gender",
         targetKey: "keyMap",
         as: "genderData",

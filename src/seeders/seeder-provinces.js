@@ -1,0 +1,57 @@
+"use strict";
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    const provinces = [
+      { code: "01", name: "Hà Nội" },
+      { code: "02", name: "Bắc Ninh" },
+      { code: "03", name: "Quảng Ninh" },
+      { code: "04", name: "Hải Phòng" },
+      { code: "05", name: "Hưng Yên" },
+      { code: "06", name: "Ninh Bình" },
+      { code: "07", name: "Cao Bằng" },
+      { code: "08", name: "Tuyên Quang" },
+      { code: "09", name: "Lào Cai" },
+      { code: "10", name: "Thái Nguyên" },
+      { code: "11", name: "Lạng Sơn" },
+      { code: "12", name: "Phú Thọ" },
+      { code: "13", name: "Điện Biên" },
+      { code: "14", name: "Lai Châu" },
+      { code: "15", name: "Sơn La" },
+      { code: "16", name: "Thanh Hóa" },
+      { code: "17", name: "Nghệ An" },
+      { code: "18", name: "Hà Tĩnh" },
+      { code: "19", name: "Quảng Trị" },
+      { code: "20", name: "Huế" },
+      { code: "21", name: "Đà Nẵng" },
+      { code: "22", name: "Quảng Ngãi" },
+      { code: "23", name: "Khánh Hòa" },
+      { code: "24", name: "Gia Lai" },
+      { code: "25", name: "Đắk Lắk" },
+      { code: "26", name: "Lâm Đồng" },
+      { code: "27", name: "Tây Ninh" },
+      { code: "28", name: "Đồng Nai" },
+      { code: "29", name: "Hồ Chí Minh" },
+      { code: "30", name: "Vĩnh Long" },
+      { code: "31", name: "Đồng Tháp" },
+      { code: "32", name: "An Giang" },
+      { code: "33", name: "Cần Thơ" },
+      { code: "34", name: "Cà Mau" },
+    ];
+
+    const currentTime = new Date("2025-08-31T12:28:00+07:00");
+    const provincesWithTimestamps = provinces.map((province) => ({
+      ...province,
+      createdAt: currentTime,
+      updatedAt: currentTime,
+    }));
+
+    await queryInterface.bulkInsert("Provinces", provincesWithTimestamps, {
+      ignoreDuplicates: true,
+    });
+  },
+
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.bulkDelete("Provinces", null, {});
+  },
+};

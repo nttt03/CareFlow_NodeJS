@@ -7,7 +7,7 @@ let handleLogin = async (req, res) => {
     if(!email || !password) {
         return res.status(500).json({
             errCode: 1,
-            message: 'Missing inputs parameter!',
+            message: 'Vui lòng nhập đầy đủ thông tin!',
         })
     }
 
@@ -21,6 +21,41 @@ let handleLogin = async (req, res) => {
         message: userData.errMessage,
         user: userData.user ? userData.user : {}
     })
+}
+
+const handleRegister = async (req, res) => {
+    try {
+        if (!req.body.email || !req.body.fullName || !req.body.phoneNumber || !req.body.password || !req.body.gender) {
+            return res.status(200).json({
+                errMessage: "Vui lòng điền đầy đủ thông tin!",
+                errCode: '1',
+                DT: ''
+            })
+        }
+
+        if (req.body.password && req.body.password.length < 3) {
+            return res.status(200).json({
+                errMessage: "Password phải có ít nhất 3 ký tự!",
+                errCode: '1',
+                DT: ''
+            })
+        }
+
+        // create user
+        let data = await userServise.registerNewUser(req.body)
+        return res.status(200).json({
+            errMessage: data.errMessage,
+            errCode: data.errCode,
+            DT: ''
+        })
+
+    } catch (e) {
+        return res.status(500).json({
+            errMessage: 'Lỗi từ server!',
+            errCode: '-1',
+            DT: '',
+        })
+    }
 }
 
 let handleGetAllUsers = async (req, res) => {
@@ -66,10 +101,6 @@ let handleDeleteUser = async (req, res) => {
 
 let getAllCode = async (req, res) => {
     try {
-        // setTimeout( async () => {
-        //     let data = await userServise.getAllCodeService(req.query.type);
-        //     return res.status(200).json(data);
-        // }, 3000);
         let data = await userServise.getAllCodeService(req.query.type);
         return res.status(200).json(data);
     } catch (e) {
@@ -83,6 +114,7 @@ let getAllCode = async (req, res) => {
 
 module.exports = {
     handleLogin: handleLogin,
+    handleRegister: handleRegister,
     handleGetAllUsers: handleGetAllUsers,
     handleCreateNewUser: handleCreateNewUser,
     handleEditUser: handleEditUser,

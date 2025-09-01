@@ -25,7 +25,7 @@ let handleUserLogin = (email, password) => {
                 // user already exist
                 let user = await db.User.findOne({
                     where: { email: email },
-                    attributes: ['id', 'email', 'roleId', 'password', 'firstName', 'lastName'],
+                    attributes: ['id', 'email', 'roleId', 'password', 'fullName'],
                     raw: true
                 });
                 if(user) {
@@ -39,24 +39,90 @@ let handleUserLogin = (email, password) => {
                         userData.user = user;
                     }else {
                         userData.errCode = 3;
-                        userData.errMessage = 'wrong password';
+                        userData.errMessage = 'Sai mật khẩu!';
                     }
                 }
                 else {
                     userData.errCode = 2;
-                    userData.errMessage = `User's not found`
+                    userData.errMessage = `Không tìm thấy người dùng này!`
                 
                 }
 
             }else {
                 userData.errCode = 1;
-                userData.errMessage = `Your's email isn't exist in your system. Please try other email!`;
+                userData.errMessage = `Email không tồn tại. Vui lòng thử lại bằng email khác!`;
             }
             resolve(userData)
         } catch(e) {
             reject(e)
         }
     })
+}
+
+const checkEmailExist = async (email) => {
+    let user = await db.User.findOne({
+        where: { email: email }
+    })
+    if (user) {
+        return true;
+    }
+    return false;
+}
+
+const checkPhoneExist = async (phoneNumber) => {
+    let user = await db.User.findOne({
+        where: { phoneNumber: phoneNumber }
+    })
+    if (user) {
+        return true;
+    }
+    return false;
+}
+
+const registerNewUser = async (rawUserData) => {
+    try {
+        // check email/phonenumber are exist
+        let isEmailExist = await checkEmailExist(rawUserData.email);
+        if (isEmailExist === true) {
+            return {
+                errMessage: 'Email đã thực sự tồn tại!',
+                errCode: 1
+            }
+        }
+        let isPhoneExist = await checkPhoneExist(rawUserData.phoneNumber);
+        if (isPhoneExist === true) {
+            return {
+                errMessage: 'Số điện thoại đã tồn tại!',
+                errCode: 1
+            }
+        }
+
+        // hash user password
+        let hashPassword = await hashUserPassword(rawUserData.password);
+
+        // create new user
+        await db.User.create({
+            email: rawUserData.email,
+            fullName: rawUserData.fullName,
+            phoneNumber: rawUserData.phoneNumber,
+            gender: rawUserData.gender,
+            password: hashPassword,
+            status: 'A1',
+            roleId: 'R3'
+        })
+        return {
+            errMessage: 'Đăng ký thành công ✔.',
+            errCode: 0
+        }
+
+    } catch (e) {
+        console.log("err: ", e);
+        return {
+            errMessage: 'Lỗi hệ thống khi đăng ký tài khoản',
+            errCode: -2
+        }
+    }
+
 }
 
 let checkUserEmail = (userEmail) => {
@@ -220,7 +286,7 @@ let getAllCodeService = (typeInput) => {
 
             } else {
                 let res = {};
-                let allcode = await db.Allcode.findAll({
+                let allcode = await db.Datacode.findAll({
                     where: {type: typeInput}
                 });
                 res.errCode = 0;
@@ -236,6 +302,7 @@ let getAllCodeService = (typeInput) => {
 
 module.exports = {
     handleUserLogin: handleUserLogin,
+    registerNewUser: registerNewUser,
     getAllUsers: getAllUsers,
     createNewUser: createNewUser,
     deleteUser: deleteUser,
