@@ -93,6 +93,7 @@ let handleUserLogin = (email, password) => {
                         }
                         userData.user = {
                             access_token: token,
+                            id: user.id,
                             email: user.email,
                             roleId: user.roleId,
                             fullName: user.fullName,

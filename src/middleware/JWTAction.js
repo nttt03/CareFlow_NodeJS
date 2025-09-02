@@ -1,7 +1,40 @@
 import jwt from 'jsonwebtoken';
 require('dotenv').config();
+import axios from "axios";
 
 const nonSecurePaths = ["/login", "/register"];
+
+const verifyCaptcha = async (req, res, next) => {
+  try {
+    const token = req.body.captchaToken;
+    if (!token) {
+      return res.status(400).json({
+        errMessage: "Thiếu captcha token!",
+        errCode: 1,
+      });
+    }
+
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
+
+    const response = await axios.post(url);
+
+    if (response.data.success) {
+      return next();
+    } else {
+      return res.status(400).json({
+        errMessage: "Captcha không hợp lệ!",
+        errCode: 1,
+      });
+    }
+  } catch (e) {
+    console.error("Captcha verify error:", e);
+    return res.status(500).json({
+      errMessage: "Lỗi xác thực Captcha!",
+      errCode: -1,
+    });
+  }
+};
 
 const createJWT = (payload) => {
     let key = process.env.JWT_SECRET;
@@ -87,5 +120,5 @@ const checkUserPermission = (req, res, next) => {
 }
 
 module.exports = {
-    createJWT, verifyToken, checkUserJWT, checkUserPermission
+    verifyCaptcha, createJWT, verifyToken, checkUserJWT, checkUserPermission
 }
