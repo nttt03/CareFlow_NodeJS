@@ -1,5 +1,6 @@
 import { where } from "sequelize";
 import db from "../models/index";
+import { createJWT } from '../middleware/JWTAction';
 import bcrypt from 'bcryptjs'; // import thư viện hashPassword
 
 const salt = bcrypt.genSaltSync(10);
@@ -15,6 +16,50 @@ let hashUserPassword = (password) => {
     })
 }
 
+// let handleUserLogin = (email, password) => {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+//             let userData = {};
+
+//             let isExist = await checkUserEmail(email);
+//             if(isExist) {
+//                 // user already exist
+//                 let user = await db.User.findOne({
+//                     where: { email: email },
+//                     attributes: ['id', 'email', 'roleId', 'password', 'fullName'],
+//                     raw: true
+//                 });
+//                 if(user) {
+//                     // compare password
+//                     let check = await bcrypt.compareSync(password, user.password);
+//                     if(check) {
+//                         userData.errCode = 0;
+//                         userData.errMessage = "ok";
+
+//                         delete user.password;
+//                         userData.user = user;
+//                     }else {
+//                         userData.errCode = 3;
+//                         userData.errMessage = 'Sai mật khẩu!';
+//                     }
+//                 }
+//                 else {
+//                     userData.errCode = 2;
+//                     userData.errMessage = `Không tìm thấy người dùng này!`
+                
+//                 }
+
+//             }else {
+//                 userData.errCode = 1;
+//                 userData.errMessage = `Email không tồn tại. Vui lòng thử lại bằng email khác!`;
+//             }
+//             resolve(userData)
+//         } catch(e) {
+//             reject(e)
+//         }
+//     })
+// }
+
 let handleUserLogin = (email, password) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -25,7 +70,7 @@ let handleUserLogin = (email, password) => {
                 // user already exist
                 let user = await db.User.findOne({
                     where: { email: email },
-                    attributes: ['id', 'email', 'roleId', 'password', 'fullName'],
+                    attributes: ['id', 'email', 'roleId', 'password', 'fullName', 'avatar'],
                     raw: true
                 });
                 if(user) {
@@ -36,8 +81,24 @@ let handleUserLogin = (email, password) => {
                         userData.errMessage = "ok";
 
                         delete user.password;
-                        userData.user = user;
-                    }else {
+                        // userData.user = user;
+                        let payload = {
+                            id: user.id,
+                            email: user.email,
+                            roleId: user.roleId,
+                        }
+                        let token = createJWT(payload);
+                        if (user && user.avatar) {
+                            user.avatar = Buffer.from(user.avatar, 'base64').toString('binary');
+                        }
+                        userData.user = {
+                            access_token: token,
+                            email: user.email,
+                            roleId: user.roleId,
+                            fullName: user.fullName,
+                            avatar: user.avatar,
+                        };
+                    } else {
                         userData.errCode = 3;
                         userData.errMessage = 'Sai mật khẩu!';
                     }
@@ -245,15 +306,14 @@ let updateUserData = (data) => {
                 
             })
             if (user) {
-                user.lastName = data.lastName;
-                user.firstName = data.firstName;
-                user.address = data.address;
+                user.fullName = data.fullName;
+                user.addressDetail = data.address;
                 user.roleId = data.roleId;
                 user.positionId = data.positionId;
                 user.gender = data.gender;
                 user.phoneNumber = data.phoneNumber;
                 if(data.avatar) {
-                    user.image = data.avatar
+                    user.avatar = data.avatar
                 }
 
                 await user.save();

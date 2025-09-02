@@ -1,26 +1,56 @@
 import userServise from '../services/userService'
 
-let handleLogin = async (req, res) => {
-    let email = req.body.email;
-    let password = req.body.password;
+// let handleLogin = async (req, res) => {
+//     let email = req.body.email;
+//     let password = req.body.password;
 
-    if(!email || !password) {
+//     if(!email || !password) {
+//         return res.status(500).json({
+//             errCode: 1,
+//             message: 'Vui lòng nhập đầy đủ thông tin!',
+//         })
+//     }
+
+//     let userData = await userServise.handleUserLogin(email, password);
+//     // check email có tồn tại hay ko
+//     // so sánh password
+//     // return userInfor
+//     // access_token:JWT
+//     return res.status(200).json({
+//         errCode: userData.errCode,
+//         message: userData.errMessage,
+//         user: userData.user ? userData.user : {}
+//     })
+// }
+
+let handleLogin = async (req, res) => {
+    try {
+        let email = req.body.email;
+        let password = req.body.password;
+        if(!email || !password) {
+            return res.status(400).json({
+                errCode: 1,
+                message: 'Vui lòng nhập đầy đủ thông tin!',
+            })
+        }
+        let userData = await userServise.handleUserLogin(email, password);
+        // mỗi khi login sẽ set cookie, JWT được gửi về client qua res.cookie() (httpOnly)
+        if (userData && userData.user && userData.user.access_token) {
+            res.clearCookie("jwt");
+            res.cookie('jwt', userData.user.access_token, { httpOnly: true, maxAge: 60 * 60 * 1000 })
+        }
+        return res.status(200).json({
+            errCode: userData.errCode,
+            message: userData.errMessage,
+            user: userData.user ? userData.user : {}
+        })
+    } catch (e) {
         return res.status(500).json({
-            errCode: 1,
-            message: 'Vui lòng nhập đầy đủ thông tin!',
+            errCode: '-1',
+            errMessage: 'Lỗi từ server!',
+            DT: '',
         })
     }
-
-    let userData = await userServise.handleUserLogin(email, password);
-    // check email có tồn tại hay ko
-    // so sánh password
-    // return userInfor
-    // access_token:JWT
-    return res.status(200).json({
-        errCode: userData.errCode,
-        message: userData.errMessage,
-        user: userData.user ? userData.user : {}
-    })
 }
 
 const handleRegister = async (req, res) => {
