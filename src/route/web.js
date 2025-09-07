@@ -51,6 +51,7 @@ let initWebRoutes = (app) => {
     router.post("/api/patient-book-appointment", patientController.postBookApointment);
     router.post("/api/verify-book-appointment", patientController.postVerifyBookApointment);
     router.get("/api/get-info-user-by-id", checkUserJWT, patientController.getInfoUserById);
+    router.put('/api/update-info-by-user', checkUserJWT, patientController.updateInfoByUser);
 
 
     router.post('/api/chat', chatbotController.handleChat);

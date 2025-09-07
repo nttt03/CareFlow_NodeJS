@@ -363,11 +363,77 @@ let getInfoUserById = (inputId) => {
     })
 }
 
+const updateInfoByUser = async (userId, data) => {
+  try {
+    let user = await db.User.findOne({
+      where: { id: userId },
+      raw: false
+    });
+
+    if (!user) {
+      return {
+        errCode: 1,
+        errMessage: "Không tìm thấy user!",
+      };
+    }
+
+    // cập nhật thông tin
+    user.fullName = data.fullName ?? user.fullName;
+    user.phoneNumber = data.phoneNumber ?? user.phoneNumber;
+    user.dateOfBirth = data.dateOfBirth ?? user.dateOfBirth;
+    user.gender = data.gender ?? user.gender; // "M" / "F"
+    user.addressDetail = data.addressDetail ?? user.addressDetail;
+    user.email = data.email ?? user.email;
+    user.CCCD = data.CCCD ?? user.CCCD;
+    user.provinceId = data.provinceId ?? user.provinceId;
+    user.avatar = data.avatar ?? user.avatar;
+
+    await user.save();
+
+    // lấy lại thông tin kèm liên kết
+    const updatedUser = await db.User.findOne({
+      where: { id: userId },
+      include: [
+        {
+          model: db.Datacode,
+          as: "genderData",
+          attributes: ["valueVi", "valueEn"],
+        },
+        {
+          model: db.Province,
+          as: "provinceData",
+          attributes: ["id", "code", "name"],
+        },
+      ],
+      raw: false,
+      nest: true,
+    });
+
+    if (updatedUser.avatar) {
+        updatedUser.avatar = Buffer.from(updatedUser.avatar, 'base64').toString('binary');
+    }
+
+    return {
+      errCode: 0,
+      errMessage: "Cập nhật thông tin thành công!",
+      data: updatedUser,
+    };
+  } catch (e) {
+    console.error("Update user service error:", e);
+    return {
+      errCode: -1,
+      errMessage: "Lỗi server khi cập nhật!",
+    };
+  }
+};
+
+
 module.exports = {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
     getNewAppointment: getNewAppointment,
     getDoneAppointment: getDoneAppointment,
     sendAppointmentReminder: sendAppointmentReminder,
-    getInfoUserById: getInfoUserById
+    getInfoUserById: getInfoUserById,
+    updateInfoByUser: updateInfoByUser
 }

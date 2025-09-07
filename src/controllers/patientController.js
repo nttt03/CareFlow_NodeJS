@@ -73,10 +73,32 @@ let getInfoUserById = async (req, res) => {
     }
 }
 
+const updateInfoByUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const data = req.body;
+
+    const result = await patientService.updateInfoByUser(userId, data);
+
+    if (result.errCode === 0) {
+      return res.status(200).json(result);
+    } else {
+      return res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error("Update info by user error:", error);
+    return res.status(500).json({
+      errCode: -1,
+      errMessage: "Lỗi server khi cập nhật thông tin!",
+    });
+  }
+};
+
 module.exports = {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
     getNewAppointment: getNewAppointment,
     getDoneAppointment: getDoneAppointment,
-    getInfoUserById: getInfoUserById
+    getInfoUserById: getInfoUserById,
+    updateInfoByUser: updateInfoByUser
 }
