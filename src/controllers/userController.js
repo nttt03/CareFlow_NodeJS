@@ -37,7 +37,13 @@ let handleLogin = async (req, res) => {
         // mỗi khi login sẽ set cookie, JWT được gửi về client qua res.cookie() (httpOnly)
         if (userData && userData.user && userData.user.access_token) {
             res.clearCookie("jwt");
-            res.cookie('jwt', userData.user.access_token, { httpOnly: true, maxAge: 60 * 60 * 1000 })
+            res.cookie("jwt", userData.user.access_token, {
+            httpOnly: true,
+            secure: false,          // nếu chạy HTTPS (production) thì để true
+            sameSite: "lax", 
+            domain: "localhost",
+            maxAge: 60 * 60 * 1000, // 1 giờ
+            });
         }
         return res.status(200).json({
             errCode: userData.errCode,
@@ -142,6 +148,19 @@ let getAllCode = async (req, res) => {
     }
 }
 
+let getAllProvince = async (req, res) => {
+    try {
+        let data = await userServise.getAllProvince();
+        return res.status(200).json(data);
+    } catch (e) {
+        console.log('Get all province error: ', e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Error from server"
+        })
+    }
+}
+
 module.exports = {
     handleLogin: handleLogin,
     handleRegister: handleRegister,
@@ -150,5 +169,5 @@ module.exports = {
     handleEditUser: handleEditUser,
     handleDeleteUser: handleDeleteUser,
     getAllCode: getAllCode,
-
+    getAllProvince: getAllProvince
 }

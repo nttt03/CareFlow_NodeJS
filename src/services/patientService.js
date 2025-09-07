@@ -309,10 +309,65 @@ let sendAppointmentReminder = () => {
     });
 };
 
+let getInfoUserById = (inputId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if(!inputId) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parameter!'
+                })
+            } else {
+                let data = await db.User.findOne({
+                    where: {
+                        id: inputId
+                    },
+                    attributes: {
+                        exclude: ['password']
+                    },
+                    include: [
+                        {
+                            model: db.Province,
+                            as: "provinceData",
+                            attributes: ["id", "code", "name"]
+                        },
+                        {
+                            model: db.CommuneUnit,
+                            as: "communeUnitData",
+                            attributes: ["id", "code", "name", "type"]
+                        },
+                        {
+                            model: db.Datacode,
+                            as: "genderData",
+                            attributes: ["valueEn", "valueVi"]
+                        },
+                    ],
+                    raw: false,
+                    nest: true
+                })
+                
+                if(data && data.avatar) {
+                    data.avatar = Buffer.from(data.avatar, 'base64').toString('binary');
+                }
+                if(!data) { data = {} }
+
+                resolve({
+                    errCode: 0,
+                    data: data
+                })
+            }
+            
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
     getNewAppointment: getNewAppointment,
     getDoneAppointment: getDoneAppointment,
     sendAppointmentReminder: sendAppointmentReminder,
+    getInfoUserById: getInfoUserById
 }

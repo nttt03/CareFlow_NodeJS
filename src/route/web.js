@@ -6,7 +6,7 @@ import patientController from "../controllers/patientController";
 import specialtyController from "../controllers/specialtyController";
 import clinicController from "../controllers/clinicController";
 import chatbotController  from "../controllers/chatbotController";
-import { verifyCaptcha } from "../middleware/JWTAction";
+import { checkUserJWT, verifyCaptcha } from "../middleware/JWTAction";
 let router = express.Router();
 
 let initWebRoutes = (app) => {
@@ -25,6 +25,7 @@ let initWebRoutes = (app) => {
     router.put('/api/edit-user', userController.handleEditUser);
     router.delete('/api/delete-user', userController.handleDeleteUser);
     router.get("/api/allcode", userController.getAllCode);
+    router.get("/api/allprovince", userController.getAllProvince);
 
     router.get("/api/top-doctor-home", doctorController.getTopDoctorHome);
     router.get("/api/get-all-doctor", doctorController.getGetAllDoctor);
@@ -34,13 +35,8 @@ let initWebRoutes = (app) => {
     router.get("/api/get-schedule-doctor-by-date", doctorController.getScheduleByDate);
     router.get("/api/get-extra-infor-doctor-by-id", doctorController.getEtraInforDoctorById);
     router.get("/api/get-profile-doctor-by-id", doctorController.getProfileDoctorById);
-
     router.get("/api/get-list-patient-for-doctor", doctorController.getListPatientForDoctor);
     router.post("/api/send-remedy", doctorController.sendRemedy);
-
-
-    router.post("/api/patient-book-appointment", patientController.postBookApointment);
-    router.post("/api/verify-book-appointment", patientController.postVerifyBookApointment);
 
     router.post("/api/create-new-specialty", specialtyController.createSpecialty);
     router.get("/api/get-all-specialty", specialtyController.getAllSpecialty);
@@ -50,10 +46,12 @@ let initWebRoutes = (app) => {
     router.get("/api/get-all-clinic", clinicController.getAllClinic);
     router.get("/api/get-detail-clinic-by-id", clinicController.getDetailClinicById);
 
-    /////////////
-
     router.get("/api/get-new-appointment", patientController.getNewAppointment);
     router.get("/api/get-done-appointment", patientController.getDoneAppointment);
+    router.post("/api/patient-book-appointment", patientController.postBookApointment);
+    router.post("/api/verify-book-appointment", patientController.postVerifyBookApointment);
+    router.get("/api/get-info-user-by-id", checkUserJWT, patientController.getInfoUserById);
+
 
     router.post('/api/chat', chatbotController.handleChat);
     

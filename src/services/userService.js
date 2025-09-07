@@ -1,7 +1,7 @@
 import { where } from "sequelize";
 import db from "../models/index";
 import { createJWT } from '../middleware/JWTAction';
-import bcrypt from 'bcryptjs'; // import thư viện hashPassword
+import bcrypt from 'bcryptjs';
 
 const salt = bcrypt.genSaltSync(10);
 let hashUserPassword = (password) => {
@@ -15,50 +15,6 @@ let hashUserPassword = (password) => {
 
     })
 }
-
-// let handleUserLogin = (email, password) => {
-//     return new Promise(async (resolve, reject) => {
-//         try {
-//             let userData = {};
-
-//             let isExist = await checkUserEmail(email);
-//             if(isExist) {
-//                 // user already exist
-//                 let user = await db.User.findOne({
-//                     where: { email: email },
-//                     attributes: ['id', 'email', 'roleId', 'password', 'fullName'],
-//                     raw: true
-//                 });
-//                 if(user) {
-//                     // compare password
-//                     let check = await bcrypt.compareSync(password, user.password);
-//                     if(check) {
-//                         userData.errCode = 0;
-//                         userData.errMessage = "ok";
-
-//                         delete user.password;
-//                         userData.user = user;
-//                     }else {
-//                         userData.errCode = 3;
-//                         userData.errMessage = 'Sai mật khẩu!';
-//                     }
-//                 }
-//                 else {
-//                     userData.errCode = 2;
-//                     userData.errMessage = `Không tìm thấy người dùng này!`
-                
-//                 }
-
-//             }else {
-//                 userData.errCode = 1;
-//                 userData.errMessage = `Email không tồn tại. Vui lòng thử lại bằng email khác!`;
-//             }
-//             resolve(userData)
-//         } catch(e) {
-//             reject(e)
-//         }
-//     })
-// }
 
 let handleUserLogin = (email, password) => {
     return new Promise(async (resolve, reject) => {
@@ -361,6 +317,21 @@ let getAllCodeService = (typeInput) => {
     })
 }
 
+let getAllProvince = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let provinces = await db.Province.findAll();
+            resolve({
+                errCode: 0,
+                errMessage: 'Get all province success',
+                data: provinces
+            });
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+
 module.exports = {
     handleUserLogin: handleUserLogin,
     registerNewUser: registerNewUser,
@@ -369,5 +340,5 @@ module.exports = {
     deleteUser: deleteUser,
     updateUserData: updateUserData,
     getAllCodeService: getAllCodeService,
-
+    getAllProvince: getAllProvince
 }
