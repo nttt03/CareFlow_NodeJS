@@ -393,6 +393,7 @@ const updateInfoByUser = async (userId, data) => {
     // lấy lại thông tin kèm liên kết
     const updatedUser = await db.User.findOne({
       where: { id: userId },
+      attributes: { exclude: ["password"] },
       include: [
         {
           model: db.Datacode,
