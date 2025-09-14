@@ -13,6 +13,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "communeUnitId",
         as: "communeUnitData",
       });
+      Hospital.belongsTo(models.Datacode, {
+        foreignKey: "status",
+        targetKey: "keyMap",
+        as: "statusData",
+      });
     }
   }
   Hospital.init(
