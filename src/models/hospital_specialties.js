@@ -28,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Hospital_Specialties",
+      timestamps: false,
     }
   );
   return Hospital_Specialties;

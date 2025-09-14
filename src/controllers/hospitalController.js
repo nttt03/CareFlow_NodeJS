@@ -63,9 +63,23 @@ let getDetailHospitalById = async (req, res) => {
     }
 }
 
+let updateHospitalById = async (req, res) => {
+  try {
+    let data = await hospitalService.updateHospitalById(req.body);
+    return res.status(200).json(data);
+  } catch (e) {
+    console.log("Update hospital error:", e);
+    return res.status(500).json({
+      errCode: -1,
+      errMessage: "Error from server...",
+    });
+  }
+};
+
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
     getAllHospitalByAdmin: getAllHospitalByAdmin,
-    getDetailHospitalById: getDetailHospitalById
+    getDetailHospitalById: getDetailHospitalById,
+    updateHospitalById: updateHospitalById
 }

@@ -39,6 +39,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "doctorId",
         as: "infoDataDoctor",
       });
+      User.belongsTo(models.Hospital, {
+        foreignKey: "hospitalId",
+        as: "hospital",
+      });
+
     }
   }
   User.init(
@@ -61,6 +66,10 @@ module.exports = (sequelize, DataTypes) => {
       communeUnitId: {
         type: DataTypes.INTEGER,
       },
+      hospitalId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     },
     {
       sequelize,

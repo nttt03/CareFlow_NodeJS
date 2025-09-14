@@ -39,7 +39,8 @@ module.exports = (sequelize, DataTypes) => {
     rating: DataTypes.STRING,
   }, {
     sequelize,
-    modelName: "Doctor_Infor"
+    modelName: "Doctor_Infor",
+    tableName: "Doctor_Infor",
   });
   return Doctor_Infor;
 };

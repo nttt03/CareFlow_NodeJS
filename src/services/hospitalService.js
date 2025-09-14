@@ -118,48 +118,170 @@ let getAllHospitalByAdmin = (page, limit, name, provinceId, status) => {
 };
 
 let getDetailHospitalById = (inputId) => {
-    return new Promise(async(resolve, reject) => {
-        try {
-            if (!inputId) {
-                resolve({
-                    errCode: 1,
-                    errMessage: 'Missing parameter'
-                })
-            } else {
-                let data = await db.Hospital.findOne({
-                    where: {
-                        id: inputId
-                    },
-                    attributes: ['name', 'address', 'descriptionHTML', 'descriptionMarkdown'],
-                })
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!inputId) {
+        resolve({
+          errCode: 1,
+          errMessage: "Missing parameter",
+        });
+      } else {
+        let hospital = await db.Hospital.findOne({
+          where: { id: inputId },
+          include: [
+            {
+              model: db.Province,
+              as: "provinceData",
+              attributes: ["id", "name"],
+            },
+            {
+              model: db.CommuneUnit,
+              as: "communeUnitData",
+              attributes: ["id", "name"],
+            },
+            {
+              model: db.Datacode,
+              as: "statusData",
+              attributes: ["keyMap", "valueEn", "valueVi"],
+            },
+          ],
+          raw: false,
+          nest: true,
+        });
 
-                if (data) {
-                    let doctorHospital = [];
-                    doctorHospital = await db.Doctor_Infor.findAll({
-                        where: {
-                            clinicId: inputId
-                        },
-                        attributes: ['doctorId', 'provinceId'],
-                    })
-                    
-                    data.doctorHospital = doctorHospital;
+        if (!hospital) {
+          resolve({
+            errCode: 2,
+            errMessage: "Hospital not found",
+            data: {},
+          });
+        } else {
+          // convert ảnh từ base64 → binary string
+          let hospitalData = hospital.toJSON();
+          if (hospitalData.image) {
+            hospitalData.image = Buffer.from(hospitalData.image, "base64").toString("binary");
+          }
 
-                } else data = {}
-                resolve({
-                    errCode: 0,
-                    errMessage: 'Get detail clinic successfully',
-                    data
-                })
+          // Lấy chuyên khoa của bệnh viện
+          let specialties = await db.Hospital_Specialties.findAll({
+            where: { hospitalId: inputId },
+            include: [
+              {
+                model: db.Specialty,
+                as: "specialty",
+                attributes: ["id", "name", "descriptionMarkdown"],
+              },
+            ],
+            raw: true,
+            nest: true,
+          });
+
+          // Lấy lãnh đạo bệnh viện (roleId = R4)
+          let leaders = await db.User.findAll({
+            where: { hospitalId: inputId, roleId: "R4" },
+            attributes: ["id", "fullName", "email", "phoneNumber", "avatar"],
+            raw: true,
+          });
+
+          // convert avatar lãnh đạo
+          leaders = leaders.map((item) => {
+            if (item.avatar) {
+              item.avatar = Buffer.from(item.avatar, "base64").toString("binary");
             }
-        } catch (e) {
-            reject(e);
+            return item;
+          });
+
+          // Lấy danh sách bác sĩ
+          let doctors = await db.Doctor_Infor.findAll({
+            where: { hospitalId: inputId },
+            include: [
+              {
+                model: db.User,
+                as: "doctor",
+                attributes: ["id", "fullName", "email", "phoneNumber", "avatar"],
+              },
+              {
+                model: db.Specialty,
+                as: "specialty",
+                attributes: ["id", "name"],
+              },
+            ],
+            raw: true,
+            nest: true,
+          });
+
+          // convert avatar bác sĩ
+          doctors = doctors.map((item) => {
+            if (item.doctor && item.doctor.avatar) {
+              item.doctor.avatar = Buffer.from(item.doctor.avatar, "base64").toString("binary");
+            }
+            return item;
+          });
+
+          resolve({
+            errCode: 0,
+            errMessage: "Get detail hospital successfully",
+            data: {
+              ...hospitalData,
+              specialties,
+              leaders,
+              doctors,
+            },
+          });
         }
-    })
-}
+      }
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+let updateHospitalById = async (data) => {
+  try {
+    if (!data.id) {
+      return {
+        errCode: 1,
+        errMessage: "Missing hospital id",
+      };
+    }
+
+    let hospital = await db.Hospital.findOne({
+      where: { id: data.id },
+      raw: false,
+    });
+
+    if (!hospital) {
+      return {
+        errCode: 2,
+        errMessage: "Hospital not found",
+      };
+    }
+
+    // update field
+    hospital.name = data.name;
+    hospital.provinceId = data.provinceId;
+    hospital.addressDetail = data.addressDetail;
+    hospital.descriptionMarkdown = data.descriptionMarkdown;
+    hospital.descriptionHTML = data.descriptionHTML;
+    if (data.imageBase64) {
+      hospital.image = data.imageBase64;
+    }
+
+    await hospital.save();
+
+    return {
+      errCode: 0,
+      errMessage: "Update hospital success",
+    };
+  } catch (e) {
+    throw e;
+  }
+};
 
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
     getAllHospitalByAdmin: getAllHospitalByAdmin,
-    getDetailHospitalById: getDetailHospitalById
+    getDetailHospitalById: getDetailHospitalById,
+    updateHospitalById: updateHospitalById
 }
