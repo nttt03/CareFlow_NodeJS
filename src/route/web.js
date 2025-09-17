@@ -42,12 +42,16 @@ let initWebRoutes = (app) => {
     router.post("/api/create-new-specialty", specialtyController.createSpecialty);
     router.get("/api/get-all-specialty", specialtyController.getAllSpecialty);
     router.get("/api/get-detail-specialty-by-id", specialtyController.getDetailSpecialtyById);
+    router.get("/api/get-detail-specialty", specialtyController.getDetailSpecialty);
+    router.put("/api/update-specialty-by-id", specialtyController.updateSpecialtyById);
+    router.delete("/api/delete-specialty-by-id", specialtyController.deleteSpecialtyById);
 
     router.post("/api/create-new-hospital", hospitalController.createHospital);
     router.get("/api/get-all-hospital", hospitalController.getAllHospital);
     router.get("/api/get-all-hospital-by-admin", hospitalController.getAllHospitalByAdmin);
     router.get("/api/get-detail-hospital-by-id", hospitalController.getDetailHospitalById);
     router.put("/api/update-hospital-by-id", hospitalController.updateHospitalById);
+    router.delete("/api/delete-hospital-by-id", hospitalController.deleteHospitalById);
 
     router.get("/api/get-new-appointment", patientController.getNewAppointment);
     router.get("/api/get-done-appointment", patientController.getDoneAppointment);

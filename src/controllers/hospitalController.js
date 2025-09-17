@@ -76,10 +76,33 @@ let updateHospitalById = async (req, res) => {
   }
 };
 
+let deleteHospitalById = async (req, res) => {
+  try {
+    let id = req.body.id;
+    if (!id) {
+      return res.status(400).json({
+        errCode: 1,
+        errMessage: "Missing required parameter: id",
+      });
+    }
+
+    let result = await hospitalService.deleteHospitalById(id);
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error("Error in deleteHospitalById:", e);
+    return res.status(500).json({
+      errCode: -1,
+      errMessage: "Error from server",
+    });
+  }
+};
+
+
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
     getAllHospitalByAdmin: getAllHospitalByAdmin,
     getDetailHospitalById: getDetailHospitalById,
-    updateHospitalById: updateHospitalById
+    updateHospitalById: updateHospitalById,
+    deleteHospitalById: deleteHospitalById
 }

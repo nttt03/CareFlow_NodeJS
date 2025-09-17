@@ -263,6 +263,7 @@ let updateHospitalById = async (data) => {
     hospital.addressDetail = data.addressDetail;
     hospital.descriptionMarkdown = data.descriptionMarkdown;
     hospital.descriptionHTML = data.descriptionHTML;
+    hospital.status = data.status;
     if (data.imageBase64) {
       hospital.image = data.imageBase64;
     }
@@ -278,10 +279,37 @@ let updateHospitalById = async (data) => {
   }
 };
 
+let deleteHospitalById = async (id) => {
+  try {
+    let hospital = await db.Hospital.findOne({
+      where: { id: id },
+    });
+
+    if (!hospital) {
+      return {
+        errCode: 2,
+        errMessage: "Hospital not found",
+      };
+    }
+
+    await db.Hospital.destroy({
+      where: { id: id },
+    });
+
+    return {
+      errCode: 0,
+      errMessage: "Delete hospital successfully",
+    };
+  } catch (e) {
+    throw e;
+  }
+};
+
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
     getAllHospitalByAdmin: getAllHospitalByAdmin,
     getDetailHospitalById: getDetailHospitalById,
-    updateHospitalById: updateHospitalById
+    updateHospitalById: updateHospitalById,
+    deleteHospitalById: deleteHospitalById
 }
