@@ -305,11 +305,61 @@ let deleteHospitalById = async (id) => {
   }
 };
 
+const saveHospitalSpecialties = async (hospitalId, specialtyIds) => {
+  try {
+    if (!hospitalId || !Array.isArray(specialtyIds)) {
+      return { errCode: 1, message: "Thiếu dữ liệu hoặc dữ liệu không hợp lệ" };
+    }
+
+    await db.Hospital_Specialties.destroy({
+      where: { hospitalId },
+    });
+
+    const newData = specialtyIds.map((specialtyId) => ({
+      hospitalId,
+      specialtyId,
+    }));
+
+    if (newData.length > 0) {
+      await db.Hospital_Specialties.bulkCreate(newData);
+    }
+
+    return { errCode: 0, message: "Cập nhật chuyên khoa thành công" };
+  } catch (err) {
+    console.error(err);
+    return { errCode: 2, message: "Lỗi khi lưu chuyên khoa" };
+  }
+};
+
+const getSpecialtiesByHospital = async (hospitalId) => {
+  try {
+    const specialties = await db.Hospital_Specialties.findAll({
+      where: { hospitalId },
+      include: [
+        {
+          model: db.Specialty,
+          as: "specialty",
+          attributes: ["id", "name", "descriptionHTML", "image"]
+        }
+      ],
+      raw: false,
+      nest: true,
+    });
+
+    return specialties.map(item => item.specialty);
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+};
+
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
     getAllHospitalByAdmin: getAllHospitalByAdmin,
     getDetailHospitalById: getDetailHospitalById,
     updateHospitalById: updateHospitalById,
-    deleteHospitalById: deleteHospitalById
+    deleteHospitalById: deleteHospitalById,
+    saveHospitalSpecialties: saveHospitalSpecialties,
+    getSpecialtiesByHospital: getSpecialtiesByHospital
 }

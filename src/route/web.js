@@ -52,6 +52,8 @@ let initWebRoutes = (app) => {
     router.get("/api/get-detail-hospital-by-id", hospitalController.getDetailHospitalById);
     router.put("/api/update-hospital-by-id", hospitalController.updateHospitalById);
     router.delete("/api/delete-hospital-by-id", hospitalController.deleteHospitalById);
+    router.post("/hospital-specialties", hospitalController.saveSpecialtiesForHospital);
+    router.get("/hospital-specialties/:hospitalId", hospitalController.getSpecialtiesByHospital);
 
     router.get("/api/get-new-appointment", patientController.getNewAppointment);
     router.get("/api/get-done-appointment", patientController.getDoneAppointment);

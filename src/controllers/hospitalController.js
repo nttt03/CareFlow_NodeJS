@@ -97,6 +97,33 @@ let deleteHospitalById = async (req, res) => {
   }
 };
 
+const saveSpecialtiesForHospital = async (req, res) => {
+  const { hospitalId, specialtyIds } = req.body;
+
+  const result = await hospitalService.saveHospitalSpecialties(hospitalId, specialtyIds);
+
+  if (result.errCode === 0) {
+    return res.status(200).json(result);
+  } else {
+    return res.status(400).json(result);
+  }
+};
+
+const getSpecialtiesByHospital = async (req, res) => {
+  const { hospitalId } = req.params;
+
+  if (!hospitalId) {
+    return res.status(400).json({ errCode: 1, message: "Hospital ID không hợp lệ" });
+  }
+
+  try {
+    const specialties = await hospitalService.getSpecialtiesByHospital(hospitalId);
+    return res.status(200).json({ errCode: 0, data: specialties });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ errCode: 2, message: "Lỗi khi lấy chuyên khoa" });
+  }
+};
 
 module.exports = {
     createHospital: createHospital,
@@ -104,5 +131,7 @@ module.exports = {
     getAllHospitalByAdmin: getAllHospitalByAdmin,
     getDetailHospitalById: getDetailHospitalById,
     updateHospitalById: updateHospitalById,
-    deleteHospitalById: deleteHospitalById
+    deleteHospitalById: deleteHospitalById,
+    saveSpecialtiesForHospital: saveSpecialtiesForHospital,
+    getSpecialtiesByHospital: getSpecialtiesByHospital
 }
