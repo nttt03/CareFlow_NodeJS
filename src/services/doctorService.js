@@ -16,8 +16,8 @@ let getTopDoctorHome = (limit) => {
                     exclude: ['password']
                 },
                 include: [
-                    { model: db.Allcode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
-                    { model: db.Allcode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+                    { model: db.Datacode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
+                    { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
                     { 
                         model: db.Doctor_Infor, 
                         attributes: ['specialtyId'], 
@@ -47,7 +47,7 @@ let getAllDoctors = () => {
     return new Promise(async (resolve, reject) => {
         try {
             let doctors = await db.User.findAll({
-                where: {roleId: 'R2'},
+                where: {roleId: 'R2', status: 'A1'},
                 attributes: {
                     exclude: ['password', 'image']
                 },
@@ -63,9 +63,7 @@ let getAllDoctors = () => {
 }
 
 let checkRequiredFields = (inputData) => {
-    let arrFields = ['doctorId', 'contentHTML', 'contentMarkdown', 'action',
-        'selectedPrice', 'selectedPayment', 'selectedProvince',
-        'nameClinic', 'addressClinic', 'note', 'specialtyId']
+    let arrFields = ['doctorId', 'action', 'hospitalId', 'specialtyId']
     let isValid = true;
     let element = '';
     for (let i = 0; i < arrFields.length; i++) {
@@ -88,7 +86,7 @@ let saveDetailInforDoctor = (inputData) => {
             if(checkObj.isValid === false) {
                 resolve({
                     errCode: 1,
-                    errMessage: `Missing parameter: ${checkObj.element}`
+                    errMessage: `Thiếu dữ liệu: ${checkObj.element}`
                 })
             } else {
                 // upsert to markdown
@@ -125,28 +123,20 @@ let saveDetailInforDoctor = (inputData) => {
                 if(doctorInfor) {
                     // update
                     doctorInfor.doctorId = inputData.doctorId;
-                    doctorInfor.priceId = inputData.selectedPrice;
-                    doctorInfor.paymentId = inputData.selectedPayment;
-                    doctorInfor.provinceId = inputData.selectedProvince;
-                    doctorInfor.addressClinic = inputData.addressClinic;
-                    doctorInfor.nameClinic = inputData.nameClinic;
-                    doctorInfor.note = inputData.note;
+                    doctorInfor.hospitalId = inputData.hospitalId;
                     doctorInfor.specialtyId = inputData.specialtyId;
-                    doctorInfor.clinicId = inputData.clinicId;
+                    doctorInfor.price = inputData.price;
+                    doctorInfor.note = inputData.note;
 
                     await doctorInfor.save()    
                 } else {
                     // create
                     await db.Doctor_Infor.create({
                         doctorId: inputData.doctorId,
-                        priceId : inputData.selectedPrice,
-                        paymentId : inputData.selectedPayment,
-                        provinceId : inputData.selectedProvince,
-                        addressClinic : inputData.addressClinic,
-                        nameClinic : inputData.nameClinic,
-                        note : inputData.note,
+                        hospitalId : inputData.hospitalId,
                         specialtyId : inputData.specialtyId,
-                        clinicId: inputData.clinicId,
+                        price : inputData.price,
+                        note : inputData.note,
 
                     })
                 }
@@ -184,18 +174,12 @@ let getDetailDoctorByIdService = (inputId) => {
                             model: db.Markdown, 
                             attributes: ['description', 'contentHTML', 'contentMarkdown'] 
                         },
-                        { model: db.Allcode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
+                        { model: db.Datacode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
                         { 
                             model: db.Doctor_Infor, 
                             attributes: {
                                 exclude: ['id', 'doctorId']
                             },
-                            include: [
-                                { model: db.Allcode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
-                                { model: db.Allcode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
-                                { model: db.Allcode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
-
-                            ]
                         },
                     ],
                     raw: false,
@@ -203,7 +187,7 @@ let getDetailDoctorByIdService = (inputId) => {
                 })
                 
                 if(data && data.image) {
-                    data.image = new Buffer(data.image, 'base64').toString('binary');
+                    data.image = Buffer.from(data.image, 'base64').toString('binary');
                 }
                 if(!data) { data = {} }
 
@@ -291,7 +275,7 @@ let getScheduleByDateService = async (doctorId, date) => {
                         date: date
                     },
                     include: [   
-                        { model: db.Allcode, as: 'timeTypeData', attributes: ['valueEn', 'valueVi'] },
+                        { model: db.Datacode, as: 'timeTypeData', attributes: ['valueEn', 'valueVi'] },
                         { model: db.User, as: 'doctorData', attributes: ['firstName', 'lastName'] },
                     ],
                     raw: false,
@@ -327,9 +311,9 @@ let getEtraInforDoctorById = async (doctorId) => {
                         exclude: ['id', 'doctorId']
                     },
                     include: [
-                        { model: db.Allcode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
-                        { model: db.Allcode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
-                        { model: db.Allcode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
+                        { model: db.Datacode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
+                        { model: db.Datacode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
+                        { model: db.Datacode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
 
                     ],
                     raw: false,
@@ -369,16 +353,16 @@ let getProfileDoctorById = (inputId) => {
                             model: db.Markdown, 
                             attributes: ['description', 'contentHTML', 'contentMarkdown'] 
                         },
-                        { model: db.Allcode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
+                        { model: db.Datacode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
                         { 
                             model: db.Doctor_Infor, 
                             attributes: {
                                 exclude: ['id', 'doctorId']
                             },
                             include: [
-                                { model: db.Allcode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
-                                { model: db.Allcode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
-                                { model: db.Allcode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Datacode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Datacode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Datacode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
 
                             ]
                         },
@@ -422,11 +406,11 @@ let getListPatientForDoctor = (doctorId, date) => {
                     include: [
                         { model: db.User, as: 'patientData', attributes: ['email', 'firstName', 'address', 'gender'] ,
                             include: [
-                                { model: db.Allcode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
                             ]
                         },
                         {
-                            model: db.Allcode, as: 'timeTypeDataPatient', attributes: ['valueEn', 'valueVi'],
+                            model: db.Datacode, as: 'timeTypeDataPatient', attributes: ['valueEn', 'valueVi'],
                         }
                     ],
                     raw: false,

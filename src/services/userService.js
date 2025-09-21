@@ -204,6 +204,23 @@ let checkUserEmail = (userEmail) => {
   });
 };
 
+let checkUserPhone = (userPhone) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let user = await db.User.findOne({
+        where: { phoneNumber: userPhone },
+      });
+      if (user) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 let getAllUsers = (userId) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -235,32 +252,42 @@ let getAllUsers = (userId) => {
 let createNewUser = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // check email is exist ?
-      let check = await checkUserEmail(data.email);
-      if (check === true) {
+      let checkEmail = await checkUserEmail(data.email);
+      if (checkEmail === true) {
         resolve({
           errCode: 1,
-          errMessage: "Your email is already in used, pls try another email!",
+          errMessage: "Email đã tồn tại, vui lòng dùng email khác!",
         });
-      } else {
-        let hashPasswordFromBcrypt = await hashUserPassword(data.password);
-        await db.User.create({
-          email: data.email,
-          password: hashPasswordFromBcrypt,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          address: data.address,
-          phoneNumber: data.phoneNumber,
-          gender: data.gender,
-          roleId: data.roleId,
-          positionId: data.positionId,
-          image: data.avatar,
-        });
-        resolve({
-          errCode: 0,
-          errMessage: "OK",
-        });
+        return;
       }
+
+      let checkPhone = await checkUserPhone(data.phoneNumber);
+      if (checkPhone === true) {
+        resolve({
+          errCode: 2,
+          errMessage: "Số điện thoại đã tồn tại, vui lòng dùng số khác!",
+        });
+        return;
+      }
+
+      let hashPasswordFromBcrypt = await hashUserPassword(data.password);
+      await db.User.create({
+        email: data.email,
+        password: hashPasswordFromBcrypt,
+        fullName: data.fullName,
+        address: data.address,
+        phoneNumber: data.phoneNumber,
+        gender: data.gender,
+        roleId: data.roleId,
+        positionId: data.positionId,
+        image: data.avatar,
+        status: data.status,
+      });
+
+      resolve({
+        errCode: 0,
+        errMessage: "OK",
+      });
     } catch (e) {
       reject(e);
     }
@@ -293,39 +320,75 @@ let deleteUser = (userId) => {
 let updateUserData = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      if (!data.id || !data.roleId || !data.positionId || !data.gender) {
-        resolve({
+      if (!data.id || !data.roleId) {
+        return resolve({
           errCode: 2,
           errMessage: "Missing required id parameter",
         });
       }
+
       let user = await db.User.findOne({
         where: { id: data.id },
         raw: false,
       });
-      if (user) {
-        user.fullName = data.fullName;
-        user.addressDetail = data.address;
-        user.roleId = data.roleId;
-        user.positionId = data.positionId;
-        user.gender = data.gender;
-        user.phoneNumber = data.phoneNumber;
-        if (data.avatar) {
-          user.avatar = data.avatar;
-        }
 
-        await user.save();
-
-        resolve({
-          errCode: 0,
-          errMessage: "Update user success",
-        });
-      } else {
-        resolve({
+      if (!user) {
+        return resolve({
           errCode: 1,
           errMessage: "User not found!",
         });
       }
+
+      // Check email nếu có thay đổi
+      if (data.email && data.email !== user.email) {
+        let checkEmail = await db.User.findOne({
+          where: { email: data.email },
+        });
+        if (checkEmail) {
+          return resolve({
+            errCode: 3,
+            errMessage: "Email đã tồn tại, vui lòng chọn email khác!",
+          });
+        }
+        user.email = data.email;
+      }
+
+      // Check phone nếu có thay đổi
+      if (data.phoneNumber && data.phoneNumber !== user.phoneNumber) {
+        let checkPhone = await db.User.findOne({
+          where: { phoneNumber: data.phoneNumber },
+        });
+        if (checkPhone) {
+          return resolve({
+            errCode: 4,
+            errMessage: "Số điện thoại đã tồn tại, vui lòng nhập số khác!",
+          });
+        }
+        user.phoneNumber = data.phoneNumber;
+      }
+
+      if (data.password) {
+        user.password = await hashUserPassword(data.password);
+      }
+
+      // Update các field khác
+      user.fullName = data.fullName;
+      user.addressDetail = data.address;
+      user.roleId = data.roleId;
+      user.positionId = data.positionId;
+      user.gender = data.gender;
+      user.status = data.status;
+
+      if (data.avatar) {
+        user.avatar = data.avatar;
+      }
+
+      await user.save();
+
+      resolve({
+        errCode: 0,
+        errMessage: "Update user success",
+      });
     } catch (e) {
       reject(e);
     }
