@@ -125,6 +125,55 @@ const getSpecialtiesByHospital = async (req, res) => {
   }
 };
 
+const getDoctorsByHospital = async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    if (!hospitalId) {
+      return res.status(400).json({
+        errCode: 1,
+        message: "Missing hospitalId",
+      });
+    }
+
+    const doctors = await hospitalService.getDoctorsByHospital(hospitalId);
+
+    return res.status(200).json({
+      errCode: 0,
+      message: "Get doctors successfully",
+      data: doctors,
+    });
+  } catch (error) {
+    console.error("Error getDoctorsByHospital:", error);
+    return res.status(500).json({
+      errCode: 2,
+      message: "Server error",
+    });
+  }
+};
+
+const saveDoctorsForHospital = async (req, res) => {
+  try {
+    const { hospitalId, doctorIds } = req.body;
+
+    if (!hospitalId || !doctorIds || !Array.isArray(doctorIds)) {
+      return res.status(400).json({
+        errCode: 1,
+        message: "Missing hospitalId or doctorIds",
+      });
+    }
+
+    const result = await hospitalService.saveDoctorsForHospitalService(hospitalId, doctorIds);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error hospitalController.saveDoctorsForHospital:", error);
+    return res.status(500).json({
+      errCode: -1,
+      message: "Error from server",
+    });
+  }
+};
+
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
@@ -133,5 +182,7 @@ module.exports = {
     updateHospitalById: updateHospitalById,
     deleteHospitalById: deleteHospitalById,
     saveSpecialtiesForHospital: saveSpecialtiesForHospital,
-    getSpecialtiesByHospital: getSpecialtiesByHospital
+    getSpecialtiesByHospital: getSpecialtiesByHospital,
+    getDoctorsByHospital: getDoctorsByHospital,
+    saveDoctorsForHospital: saveDoctorsForHospital
 }

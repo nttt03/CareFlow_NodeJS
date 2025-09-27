@@ -20,10 +20,12 @@ let getTopDoctorHome = (limit) => {
                     { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
                     { 
                         model: db.Doctor_Infor, 
+                         as: 'doctorInfor',
                         attributes: ['specialtyId'], 
                         include: [
                             {
                                 model: db.Specialty, 
+                                as: 'specialty',
                                 attributes: ['name'] // Lấy tên chuyên khoa
                             }
                         ] 
@@ -44,23 +46,65 @@ let getTopDoctorHome = (limit) => {
 }
 
 let getAllDoctors = () => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            let doctors = await db.User.findAll({
-                where: {roleId: 'R2', status: 'A1'},
-                attributes: {
-                    exclude: ['password', 'image']
-                },
-            })
-            resolve({
-                errCode: 0,
-                data: doctors
-            })
-        } catch (e) {
-            reject(e);
-        }
-    })
-}
+  return new Promise(async (resolve, reject) => {
+    try {
+      let doctors = await db.User.findAll({
+        where: { roleId: "R2", status: "A1" },
+        attributes: {
+          exclude: ["password"],
+        },
+      });
+
+      if (doctors && doctors.length > 0) {
+        doctors = doctors.map((doctor) => {
+          if (doctor.avatar) {
+            // nếu avatar có dữ liệu mới convert
+            doctor.avatar = Buffer.from(doctor.avatar, "base64").toString("binary");
+          }
+          return doctor;
+        });
+      }
+
+      resolve({
+        errCode: 0,
+        data: doctors,
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+let getAllDoctorConfig = () => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let doctors = await db.User.findAll({
+        where: { roleId: "R2", status: "A1", hospitalId: null },
+        attributes: {
+          exclude: ["password"],
+        },
+      });
+
+      if (doctors && doctors.length > 0) {
+        doctors = doctors.map((doctor) => {
+          if (doctor.avatar) {
+            // nếu avatar có dữ liệu mới convert
+            doctor.avatar = Buffer.from(doctor.avatar, "base64").toString("binary");
+          }
+          return doctor;
+        });
+      }
+
+      resolve({
+        errCode: 0,
+        data: doctors,
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 
 let checkRequiredFields = (inputData) => {
     let arrFields = ['doctorId', 'action', 'hospitalId', 'specialtyId']
@@ -141,6 +185,16 @@ let saveDetailInforDoctor = (inputData) => {
                     })
                 }
 
+                let doctorUser = await db.User.findOne({
+                    where: { id: inputData.doctorId },
+                    raw: false,
+                });
+                if (doctorUser) {
+                    doctorUser.hospitalId = inputData.hospitalId;
+                    doctorUser.positionId = inputData.positionId;
+                    await doctorUser.save();
+                }
+
                 resolve({
                     errCode: 0,
                     errMessage: 'Save doctor success...'
@@ -177,6 +231,7 @@ let getDetailDoctorByIdService = (inputId) => {
                         { model: db.Datacode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
                         { 
                             model: db.Doctor_Infor, 
+                            as: 'doctorInfor',
                             attributes: {
                                 exclude: ['id', 'doctorId']
                             },
@@ -276,7 +331,7 @@ let getScheduleByDateService = async (doctorId, date) => {
                     },
                     include: [   
                         { model: db.Datacode, as: 'timeTypeData', attributes: ['valueEn', 'valueVi'] },
-                        { model: db.User, as: 'doctorData', attributes: ['firstName', 'lastName'] },
+                        { model: db.User, as: 'doctorData', attributes: ['fullName'] },
                     ],
                     raw: false,
                     nest: true
@@ -310,12 +365,12 @@ let getEtraInforDoctorById = async (doctorId) => {
                     attributes: {
                         exclude: ['id', 'doctorId']
                     },
-                    include: [
-                        { model: db.Datacode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
-                        { model: db.Datacode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
-                        { model: db.Datacode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
+                    // include: [
+                    //     { model: db.Datacode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
+                    //     { model: db.Datacode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
+                    //     { model: db.Datacode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
 
-                    ],
+                    // ],
                     raw: false,
                     nest: true
                 })
@@ -479,4 +534,5 @@ module.exports = {
     getProfileDoctorById: getProfileDoctorById,
     getListPatientForDoctor: getListPatientForDoctor,
     sendRemedy: sendRemedy,
+    getAllDoctorConfig: getAllDoctorConfig
 }

@@ -28,6 +28,19 @@ let getGetAllDoctor = async (req, res) => {
     }
 }
 
+let getAllDoctorConfig = async (req, res) => {
+    try {
+        let doctors = await doctorService.getAllDoctorConfig();
+        return res.status(200).json(doctors)
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from server...'
+        })
+    }
+}
+
 let postInforDoctor = async (req, res) => {
     try {
         let response = await doctorService.saveDetailInforDoctor(req.body);
@@ -142,5 +155,6 @@ module.exports = {
     getEtraInforDoctorById: getEtraInforDoctorById,
     getProfileDoctorById: getProfileDoctorById,
     getListPatientForDoctor: getListPatientForDoctor,
-    sendRemedy: sendRemedy
+    sendRemedy: sendRemedy,
+    getAllDoctorConfig: getAllDoctorConfig
 }

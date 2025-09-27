@@ -353,6 +353,87 @@ const getSpecialtiesByHospital = async (hospitalId) => {
   }
 };
 
+const getDoctorsByHospital = async (hospitalId) => {
+  try {
+    let doctors = await db.User.findAll({
+      where: { hospitalId: hospitalId, roleId: "R2" },
+      attributes: ["id", "fullName", "email", "phoneNumber", "avatar", "positionId"],
+      include: [
+        {
+          model: db.Doctor_Infor,
+          as: "doctorInfor",
+          attributes: ["specialtyId", "price", "note", "rating"],
+          include: [
+            {
+              model: db.Specialty,
+              as: "specialty",
+              attributes: ["id", "name"],
+            },
+          ],
+        },
+        {
+          model: db.Hospital,
+          as: "hospital",
+          attributes: ["id", "name"],
+        },
+      ],
+      raw: false,
+      nest: true,
+    });
+
+    doctors = doctors.map((item) => {
+            if (item.avatar) {
+              item.avatar = Buffer.from(item.avatar, "base64").toString("binary");
+            }
+            return item;
+          });
+
+    return doctors;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const saveDoctorsForHospitalService = async (hospitalId, doctorIds) => {
+  try {
+    if (!hospitalId || !Array.isArray(doctorIds)) {
+      return { errCode: 1, message: "Thiếu dữ liệu hoặc dữ liệu không hợp lệ" };
+    }
+
+    await db.User.update(
+      { hospitalId: null },
+      { where: { hospitalId, roleId: "R2" } }
+    );
+    await db.Doctor_Infor.update(
+      { hospitalId: null },
+      { where: { hospitalId } }
+    );
+
+    await Promise.all(
+      doctorIds.map(async (doctorId) => {
+        await db.User.update(
+          { hospitalId },
+          { where: { id: doctorId, roleId: "R2" } }
+        );
+
+        const doctorInfo = await db.Doctor_Infor.findOne({ where: { doctorId }, raw: false });
+
+        if (doctorInfo) {
+          await doctorInfo.update({ hospitalId });
+        } else {
+          await db.Doctor_Infor.create({ doctorId, hospitalId });
+        }
+      })
+    );
+
+    return { errCode: 0, message: "Cập nhật bác sĩ thành công" };
+  } catch (error) {
+    console.error("Error hospitalService.saveDoctorsForHospitalService:", error);
+    return { errCode: 2, message: "Lỗi khi lưu bác sĩ" };
+  }
+};
+
+
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
@@ -361,5 +442,7 @@ module.exports = {
     updateHospitalById: updateHospitalById,
     deleteHospitalById: deleteHospitalById,
     saveHospitalSpecialties: saveHospitalSpecialties,
-    getSpecialtiesByHospital: getSpecialtiesByHospital
+    getSpecialtiesByHospital: getSpecialtiesByHospital,
+    getDoctorsByHospital: getDoctorsByHospital,
+    saveDoctorsForHospitalService: saveDoctorsForHospitalService
 }
