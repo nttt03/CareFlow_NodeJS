@@ -174,6 +174,33 @@ const saveDoctorsForHospital = async (req, res) => {
   }
 };
 
+let savePriceForHospital = async (req, res) => {
+  try {
+    const { hospitalId, specialtyId, price } = req.body;
+
+    if (!hospitalId || !specialtyId) {
+      return res.status(400).json({
+        errCode: 1,
+        errMessage: "Missing required parameters!",
+      });
+    }
+
+    let response = await hospitalService.savePriceForHospitalService({
+      hospitalId,
+      specialtyId,
+      price,
+    });
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errCode: -1,
+      errMessage: "Server error!",
+    });
+  }
+};
+
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
@@ -184,5 +211,6 @@ module.exports = {
     saveSpecialtiesForHospital: saveSpecialtiesForHospital,
     getSpecialtiesByHospital: getSpecialtiesByHospital,
     getDoctorsByHospital: getDoctorsByHospital,
-    saveDoctorsForHospital: saveDoctorsForHospital
+    saveDoctorsForHospital: saveDoctorsForHospital,
+    savePriceForHospital: savePriceForHospital
 }

@@ -57,6 +57,7 @@ let initWebRoutes = (app) => {
     router.get("/hospital-specialties/:hospitalId", hospitalController.getSpecialtiesByHospital);
     router.get("/hospital-doctors/:hospitalId", hospitalController.getDoctorsByHospital);
     router.post("/hospital-doctors", hospitalController.saveDoctorsForHospital);
+    router.post("/save-price-hospital", hospitalController.savePriceForHospital);
 
     router.get("/api/get-new-appointment", patientController.getNewAppointment);
     router.get("/api/get-done-appointment", patientController.getDoneAppointment);

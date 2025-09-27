@@ -335,6 +335,7 @@ const getSpecialtiesByHospital = async (hospitalId) => {
   try {
     const specialties = await db.Hospital_Specialties.findAll({
       where: { hospitalId },
+      attributes: ["price"],
       include: [
         {
           model: db.Specialty,
@@ -342,11 +343,15 @@ const getSpecialtiesByHospital = async (hospitalId) => {
           attributes: ["id", "name", "descriptionHTML", "image"]
         }
       ],
-      raw: false,
+      raw: true,
       nest: true,
     });
 
-    return specialties.map(item => item.specialty);
+    // Trả ra object gồm { ...specialty, price }
+    return specialties.map(item => ({
+      ...item.specialty,
+      price: item.price,
+    }));
   } catch (err) {
     console.error(err);
     throw err;
@@ -433,6 +438,30 @@ const saveDoctorsForHospitalService = async (hospitalId, doctorIds) => {
   }
 };
 
+let savePriceForHospitalService = async ({ hospitalId, specialtyId, price }) => {
+  try {
+    const existing = await db.Hospital_Specialties.findOne({
+      where: { hospitalId, specialtyId },
+    });
+
+    if (existing) {
+      await db.Hospital_Specialties.update({ price }, { where: { hospitalId, specialtyId } });
+    } else {
+      await db.Hospital_Specialties.create({ hospitalId, specialtyId, price });
+    }
+
+    return {
+      errCode: 0,
+      errMessage: "Saved successfully!",
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      errCode: 2,
+      errMessage: "Error saving price!",
+    };
+  }
+};
 
 module.exports = {
     createHospital: createHospital,
@@ -444,5 +473,6 @@ module.exports = {
     saveHospitalSpecialties: saveHospitalSpecialties,
     getSpecialtiesByHospital: getSpecialtiesByHospital,
     getDoctorsByHospital: getDoctorsByHospital,
-    saveDoctorsForHospitalService: saveDoctorsForHospitalService
+    saveDoctorsForHospitalService: saveDoctorsForHospitalService,
+    savePriceForHospitalService: savePriceForHospitalService
 }
