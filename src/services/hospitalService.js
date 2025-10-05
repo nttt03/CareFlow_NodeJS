@@ -169,7 +169,7 @@ let getDetailHospitalById = (inputId) => {
               {
                 model: db.Specialty,
                 as: "specialty",
-                attributes: ["id", "name", "descriptionMarkdown"],
+                attributes: ["id", "name", "descriptionMarkdown", "image"],
               },
             ],
             raw: true,

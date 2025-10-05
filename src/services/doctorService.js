@@ -411,15 +411,10 @@ let getProfileDoctorById = (inputId) => {
                         { model: db.Datacode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
                         { 
                             model: db.Doctor_Infor, 
+                            as: 'doctorInfor',
                             attributes: {
                                 exclude: ['id', 'doctorId']
                             },
-                            include: [
-                                { model: db.Datacode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
-                                { model: db.Datacode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
-                                { model: db.Datacode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
-
-                            ]
                         },
                     ],
                     raw: false,
