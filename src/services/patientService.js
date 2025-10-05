@@ -1,6 +1,7 @@
 import { includes } from "lodash";
 import db from "../models/index";
 import emailService from "../services/emailService";
+import notificationService from "../services/notificationService";
 import { v4 as uuidv4 } from "uuid";
 require("dotenv").config();
 
@@ -26,8 +27,8 @@ let postBookApointment = (data) => {
           errMessage: "Missing parameter...",
         });
       } else {
-        let token = uuidv4(); // 1e8fbb8b-cd0a-4a9f-bda6-24a508bb43f8
-        // gửi mail
+        // 1. Gửi email
+        let token = uuidv4();
         await emailService.sendSimpleEmail({
           receiverEmail: data.email,
           patientName: data.fullName,
@@ -37,7 +38,7 @@ let postBookApointment = (data) => {
           redirectLink: buildUrlEmail(data.doctorId, token),
         });
 
-        // upsert patient
+        // 2. Upsert patient
         let user = await db.User.findOrCreate({
           where: { email: data.email },
           defaults: {
@@ -48,14 +49,10 @@ let postBookApointment = (data) => {
             fullName: data.fullName,
           },
         });
-        // vì findOrCreate mặc định trả về 1 mảng gồm [object, created]
-        // object: dl user lấy về, created: true/false để biết user đã tồn tại hay chưa
-        // user[0] là object, user[1] là created
-        console.log(">>> check user: ", user[0]);
 
-        // create a booking record
         if (user && user[0]) {
-          await db.Booking.findOrCreate({
+          // 3. Tạo Booking
+          let [booking, created] = await db.Booking.findOrCreate({
             where: {
               patientId: user[0].id,
               doctorId: data.doctorId,
@@ -73,6 +70,15 @@ let postBookApointment = (data) => {
               token: token,
             },
           });
+          if (created) {
+            await notificationService.createNotification({
+              senderId: user[0].id,       // người đặt
+              receiverId: data.doctorId,  // bác sĩ nhận
+              receiverRole: "R2",         // role bác sĩ
+              message: `Bạn có lịch hẹn mới từ ${data.fullName}`,
+              url: "/doctor/manage-patient",
+            });
+          }
         }
 
         resolve({
@@ -235,7 +241,7 @@ let getDoneAppointment = (inputId) => {
             {
               model: db.User,
               as: "infoDataDoctor",
-              attributes: ["firstName", "lastName"],
+              attributes: ["fullName"],
               include: [
                 {
                   model: db.Allcode,
@@ -299,7 +305,7 @@ let sendAppointmentReminder = () => {
           {
             model: db.User,
             as: "patientData",
-            // attributes: ['email', 'firstName', 'language'],
+            // attributes: ['email', 'fullName', 'language'],
             attributes: ["email", "fullName"],
           },
           {

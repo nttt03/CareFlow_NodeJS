@@ -7,6 +7,7 @@ import specialtyController from "../controllers/specialtyController";
 import hospitalController from "../controllers/hospitalController";
 import chatbotController  from "../controllers/chatbotController";
 import { checkUserJWT, verifyCaptcha } from "../middleware/JWTAction";
+import notificationController from "../controllers/notificationController";
 let router = express.Router();
 
 let initWebRoutes = (app) => {
@@ -65,6 +66,16 @@ let initWebRoutes = (app) => {
     router.post("/api/verify-book-appointment", patientController.postVerifyBookApointment);
     router.get("/api/get-info-user-by-id", checkUserJWT, patientController.getInfoUserById);
     router.put('/api/update-info-by-user', checkUserJWT, patientController.updateInfoByUser);
+
+    // Tạo thông báo
+    router.post("/api/notification", notificationController.createNotification);
+    // Lấy theo userId hoặc roleId
+    router.get(
+      "/api/notifications",
+      notificationController.getNotificationsByUser
+    );
+    // Đánh dấu đã đọc
+    router.put("/api/notification/read", notificationController.markAsRead);
 
 
     router.post('/api/chat', chatbotController.handleChat);

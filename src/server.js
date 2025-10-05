@@ -2,40 +2,48 @@ import express from "express";
 import bodyParser from "body-parser";
 import viewEngine from "./config/viewEngine";
 import initWebRoutes from "./route/web";
-import connectDB from './config/connectDB';
+import connectDB from "./config/connectDB";
 import cookieParser from "cookie-parser";
-import './services/scheduler';
+import "./services/scheduler";
 // import cors from 'cors'
-require('dotenv').config();
+require("dotenv").config();
+
+const http = require("http");
+const { initSocket } = require("./socketIO");
 
 let app = express();
 
 // fix error cors
 // Add headers before the routes are defined
 app.use(function (req, res, next) {
+  // Website you wish to allow to connect
+  res.setHeader("Access-Control-Allow-Origin", process.env.URL_REACT);
 
-    // Website you wish to allow to connect
-    res.setHeader('Access-Control-Allow-Origin', process.env.URL_REACT);
+  // Request methods you wish to allow
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
 
-    // Request methods you wish to allow
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  // Request headers you wish to allow
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With,content-type"
+  );
 
-    // Request headers you wish to allow
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+  // Set to true if you need the website to include cookies in the requests sent
+  // to the API (e.g. in case you use sessions)
+  res.setHeader("Access-Control-Allow-Credentials", true);
 
-    // Set to true if you need the website to include cookies in the requests sent
-    // to the API (e.g. in case you use sessions)
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
-    // Pass to next layer of middleware
-    next();
+  // Pass to next layer of middleware
+  next();
 });
 
 // config app
 // app.use(bodyParser.json())
 // app.use(bodyParser.urlencoded({ extended: true }))
-app.use(bodyParser.json({ limit: '50mb' }))
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }))
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
 // config cookie-parser
 app.use(cookieParser());
@@ -46,6 +54,13 @@ initWebRoutes(app);
 connectDB();
 
 let port = process.env.PORT || 3030;
-app.listen(port, () => {
-    console.log("Backend Nodejs is running on the port: " + port)
+// Tạo HTTP server từ Express app
+const server = http.createServer(app);
+
+// Init socket.io với server
+initSocket(server);
+
+// Bắt server nghe
+server.listen(port, () => {
+  console.log("Backend Nodejs (with Socket.IO) is running on port: " + port);
 });
