@@ -32,6 +32,12 @@ let handleUserLogin = (email, password) => {
             "password",
             "fullName",
             "avatar",
+            "addressDetail",
+            "phoneNumber",
+            "dateOfBirth",
+            "CCCD",
+            "positionId",
+            "status"
           ],
           raw: true,
         });
@@ -62,6 +68,12 @@ let handleUserLogin = (email, password) => {
               roleId: user.roleId,
               fullName: user.fullName,
               avatar: user.avatar,
+              phoneNumber: user.phoneNumber,
+              addressDetail: user.addressDetail,
+              dateOfBirth: user.dateOfBirth,
+              CCCD: user.CCCD,
+              positionId: user.positionId,
+              status: user.status
             };
           } else {
             userData.errCode = 3;

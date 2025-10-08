@@ -18,9 +18,7 @@ let postBookApointment = (data) => {
         !data.doctorId ||
         !data.date ||
         !data.timeType ||
-        !data.fullName ||
-        !data.selectedGender ||
-        !data.address
+        !data.fullName
       ) {
         resolve({
           errCode: 1,
@@ -76,7 +74,7 @@ let postBookApointment = (data) => {
               receiverId: data.doctorId,  // bác sĩ nhận
               receiverRole: "R2",         // role bác sĩ
               message: `Bạn có lịch hẹn mới từ ${data.fullName}`,
-              url: "/doctor/manage-patient",
+              url: "/doctor/waiting-approval",
             });
           }
         }

@@ -2,6 +2,7 @@ import db from '../models/index';
 require('dotenv').config();
 import _ from "lodash";
 import emailService from '../services/emailService';
+import notificationService from "../services/notificationService";
 
 const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
 
@@ -415,6 +416,13 @@ let getProfileDoctorById = (inputId) => {
                             attributes: {
                                 exclude: ['id', 'doctorId']
                             },
+                            include: [
+                                {
+                                    model: db.Specialty,
+                                    as: 'specialty',
+                                    attributes: ['name'] 
+                                }
+                            ]
                         },
                     ],
                     raw: false,
@@ -438,45 +446,145 @@ let getProfileDoctorById = (inputId) => {
     })
 }
 
-let getListPatientForDoctor = (doctorId, date) => {
+let getListPatientForDoctor = (doctorId, date, status) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!doctorId || !date) {
+            if (!doctorId) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameters'
+                    errMessage: 'Missing required parameter doctorId'
                 })
             } else {
+
+                let whereCondition = {
+                    doctorId: doctorId
+                };
+
+                if (status) {
+                    whereCondition.statusId = status;
+                }
+
+                if (date) {
+                    whereCondition.date = date;
+                }
+
                 let data = await db.Booking.findAll({
-                    where: {
-                        statusId: 'S2',
-                        doctorId: doctorId,
-                        date: date
-                    },
+                    where: whereCondition,
                     include: [
-                        { model: db.User, as: 'patientData', attributes: ['email', 'fullName', 'address', 'gender'] ,
+                        {
+                            model: db.User,
+                            as: 'patientData',
+                            attributes: {
+                                exclude: ['password', 'positionId', 'hospitalId']
+                            },
                             include: [
                                 { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
-                            ]
+                                { model: db.Province, as: 'provinceData', attributes: ['code', 'name'] },
+                            ],
                         },
                         {
-                            model: db.Datacode, as: 'timeTypeDataPatient', attributes: ['valueEn', 'valueVi'],
+                            model: db.Datacode,
+                            as: 'timeTypeDataPatient',
+                            attributes: ['valueEn', 'valueVi'],
                         }
                     ],
                     raw: false,
                     nest: true
-                })
+                });
+
                 resolve({
                     errCode: 0,
                     data: data
-                })
+                });
             }
-            
+
         } catch (e) {
             reject(e)
         }
     })
 }
+
+let updateBookingStatus = (data) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let { bookingId, status } = data;
+
+      if (!bookingId || !status) {
+        return resolve({
+          errCode: 1,
+          errMessage: "Missing required parameters",
+        });
+      }
+
+      let booking = await db.Booking.findOne({
+        where: { id: bookingId },
+        raw: false,
+        include: [
+          {
+            model: db.User,
+            as: "patientData",
+            attributes: ["id", "fullName"],
+          },
+          {
+            model: db.User,
+            as: "infoDataDoctor",
+            attributes: ["id", "fullName"],
+          },
+        ],
+      });
+
+      if (!booking) {
+        return resolve({
+          errCode: 2,
+          errMessage: "Booking not found",
+        });
+      }
+
+      // Cập nhật trạng thái
+      booking.statusId = status;
+      await booking.save();
+
+      if (booking.patientData && booking.patientData.id) {
+        let message = "";
+        let url = "/new-appointment";
+
+        switch (status) {
+          case "S2":
+            message = `Lịch hẹn của bạn với bác sĩ ${booking.infoDataDoctor.fullName} đã được xác nhận.`;
+            break;
+          case "S3":
+            message = `Lịch hẹn với bác sĩ ${booking.infoDataDoctor.fullName} đang kháms.`;
+            break;
+          case "S4":
+            message = `Lịch hẹn của bạn với bác sĩ ${booking.infoDataDoctor.fullName} đã hoàn thành.`;
+            break;
+          case "S5":
+            message = `Lịch hẹn của bạn với bác sĩ ${booking.infoDataDoctor.fullName} đã bị hủy.`;
+            break;
+          default:
+            message = `Lịch hẹn của bạn vừa được cập nhật trạng thái.`;
+            break;
+        }
+
+        await notificationService.createNotification({
+          senderId: booking.infoDataDoctor.id,
+          receiverId: booking.patientData.id,
+          receiverRole: "R3",
+          message: message,
+          url: url,
+        });
+      }
+
+      return resolve({
+        errCode: 0,
+        errMessage: "Update booking status successfully",
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 
 let sendRemedy = (data) => {
     return new Promise(async (resolve, reject) => {
@@ -529,5 +637,6 @@ module.exports = {
     getProfileDoctorById: getProfileDoctorById,
     getListPatientForDoctor: getListPatientForDoctor,
     sendRemedy: sendRemedy,
-    getAllDoctorConfig: getAllDoctorConfig
+    getAllDoctorConfig: getAllDoctorConfig,
+    updateBookingStatus: updateBookingStatus
 }
