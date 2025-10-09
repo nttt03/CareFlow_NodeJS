@@ -236,6 +236,18 @@ let getDetailDoctorByIdService = (inputId) => {
                             attributes: {
                                 exclude: ['id', 'doctorId']
                             },
+                            include: [
+                                {
+                                    model: db.Specialty,
+                                    as: 'specialty',
+                                    attributes: ['name'] 
+                                },
+                                { model: db.Hospital, as: 'hospital', attributes: ['name', 'addressDetail', 'provinceId'],
+                                    include: [
+                                        { model: db.Province, as: 'provinceData', attributes: ['name'] },
+                                    ]
+                                }
+                            ]
                         },
                     ],
                     raw: false,
@@ -366,6 +378,19 @@ let getEtraInforDoctorById = async (doctorId) => {
                     attributes: {
                         exclude: ['id', 'doctorId']
                     },
+
+                    include: [
+                        {
+                            model: db.Specialty,
+                            as: 'specialty',
+                            attributes: ['name'] 
+                        },
+                        { model: db.Hospital, as: 'hospital', attributes: ['name', 'addressDetail', 'provinceId'],
+                            include: [
+                                { model: db.Province, as: 'provinceData', attributes: ['name'] },
+                            ]
+                        }
+                    ],
                     // include: [
                     //     { model: db.Datacode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
                     //     { model: db.Datacode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
