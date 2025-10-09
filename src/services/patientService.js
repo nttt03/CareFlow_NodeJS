@@ -493,6 +493,63 @@ const updateInfoByUser = async (userId, data) => {
   }
 };
 
+const toggleFavoriteService = async (userId, hospitalId, doctorId) => {
+  const existingFavorite = await db.Favorite.findOne({
+    where: {
+      userId,
+      hospitalId: hospitalId || null,
+      doctorId: doctorId || null,
+    },
+    raw: false,
+  });
+
+  if (existingFavorite) {
+    await existingFavorite.destroy();
+    return { errCode: 0, message: "Removed from favorites", isFavorite: false };
+  } else {
+    await db.Favorite.create({
+      userId,
+      hospitalId: hospitalId || null,
+      doctorId: doctorId || null,
+    });
+    return { errCode: 0, message: "Added to favorites", isFavorite: true };
+  }
+};
+
+export const getUserFavorites = async (userId) => {
+  try {
+    const favorites = await db.Favorite.findAll({
+      where: { userId },
+      include: [
+        {
+          model: db.Hospital,
+          as: "hospital",
+        },
+        {
+          model: db.User,
+          as: "doctor",
+          attributes: ["id", "fullName", "addressDetail", "phoneNumber", "positionId", "avatar"],
+        },
+      ],
+      raw: false,
+      nest: true,
+    });
+
+    return {
+      errCode: 0,
+      message: "Lấy danh sách yêu thích thành công!",
+      data: favorites,
+    };
+  } catch (error) {
+    console.error("Error getUserFavorites:", error);
+    return {
+      errCode: 1,
+      message: "Đã xảy ra lỗi khi lấy danh sách yêu thích!",
+      error: error.message,
+    };
+  }
+};
+
 module.exports = {
   postBookApointment: postBookApointment,
   postVerifyBookApointment: postVerifyBookApointment,
@@ -501,4 +558,6 @@ module.exports = {
   sendAppointmentReminder: sendAppointmentReminder,
   getInfoUserById: getInfoUserById,
   updateInfoByUser: updateInfoByUser,
+  toggleFavoriteService: toggleFavoriteService,
+  getUserFavorites: getUserFavorites,
 };

@@ -67,6 +67,8 @@ let initWebRoutes = (app) => {
     router.post("/api/verify-book-appointment", patientController.postVerifyBookApointment);
     router.get("/api/get-info-user-by-id", checkUserJWT, patientController.getInfoUserById);
     router.put('/api/update-info-by-user', checkUserJWT, patientController.updateInfoByUser);
+    router.post("/api/toggle-favorite", patientController.toggleFavorite);
+    router.get("/api/get-favorites", patientController.getUserFavorites);
 
     // Tạo thông báo
     router.post("/api/notification", notificationController.createNotification);

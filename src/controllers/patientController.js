@@ -94,11 +94,48 @@ const updateInfoByUser = async (req, res) => {
   }
 };
 
+const toggleFavorite = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.body.userId;
+    const { hospitalId, doctorId } = req.body;
+
+    if (!userId || (!hospitalId && !doctorId)) {
+      return res.status(400).json({
+        errCode: 1,
+        message: "Missing required parameters!",
+      });
+    }
+
+    const result = await patientService.toggleFavoriteService(userId, hospitalId, doctorId);
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error("Error in toggleFavorite:", e);
+    return res.status(500).json({ errCode: -1, message: "Server error" });
+  }
+};
+
+export const getUserFavorites = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.query.userId;
+    if (!userId) {
+      return res.status(400).json({ errCode: 1, message: "Thiếu userId!" });
+    }
+
+    const result = await patientService.getUserFavorites(userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error getUserFavorites controller:", error);
+    return res.status(500).json({ errCode: -1, message: "Lỗi server!" });
+  }
+};
+
 module.exports = {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
     getNewAppointment: getNewAppointment,
     getDoneAppointment: getDoneAppointment,
     getInfoUserById: getInfoUserById,
-    updateInfoByUser: updateInfoByUser
+    updateInfoByUser: updateInfoByUser,
+    toggleFavorite: toggleFavorite,
+    getUserFavorites: getUserFavorites,
 }
