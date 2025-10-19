@@ -7,7 +7,20 @@ module.exports = (sequelize, DataTypes) => {
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
-    static associate(models) {}
+    static associate(models) {
+      Medical_Record.belongsTo(models.User, {
+        foreignKey: "patientId",
+        as: "patient",
+      });
+      Medical_Record.belongsTo(models.User, {
+        foreignKey: "doctorId",
+        as: "doctor",
+      });
+      Medical_Record.belongsTo(models.Booking, {
+        foreignKey: "bookingId",
+        as: "booking",
+      });
+    }
   }
   Medical_Record.init(
     {
@@ -21,6 +34,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Medical_Record",
+      timestamps: false,
     }
   );
   return Medical_Record;

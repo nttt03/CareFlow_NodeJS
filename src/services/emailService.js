@@ -30,17 +30,12 @@ let getBodyHTMLEmail = (dataSend) => {
                 <p>Thông tin đặt lịch khám bệnh:</p>
                 <p>Thời gian: ${dataSend.time}</p>
                 <p>Bác sĩ: ${dataSend.doctorName}</p>
-                <p>Để hoàn tất việc đặt lịch, vui lòng xác nhận lịch hẹn của bạn bằng cách nhấn vào nút bên dưới:</p>
-                <div style="text-align: center; margin: 20px 0;">
-                <a href=${dataSend.redirectLink} target="_blank"
-                    style="background-color: #28a745; color: #fff; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">
-                    Xác nhận lịch hẹn
-                </a>
-                </div>
                 <p style="font-style: italic;">Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email. Xin cảm ơn!</p>
                 <hr style="border: none; border-top: 1px solid #ddd;">
-                <p style="color: #777; font-size: 14px;">Mọi thắc mắc vui lòng liên hệ <strong>CareFlow.com 🩺</strong> qua email hoặc số điện thoại.</p>
-            </div>
+                <p style="color: #777; font-size: 14px;">Mọi thắc mắc vui lòng liên hệ <strong>CareFlow.com 🩺</strong> qua email hoặc số tổng đài.</p>
+                <p>Email: CareFlow@gmail.com</p>
+                <p>Số tổng đài: 0132659874</p>
+                </div>
         `;
   }
   if (dataSend.language === "en") {
@@ -51,16 +46,11 @@ let getBodyHTMLEmail = (dataSend) => {
                 <p>Appointment details:</p>
                 <p>Time: ${dataSend.time}</p>
                 <p>Doctor: ${dataSend.doctorName}</p>
-                <p>To complete your booking, please confirm your appointment by clicking the button below:</p>
-                <div style="text-align: center; margin: 20px 0;">
-                    <a href=${dataSend.redirectLink} target="_blank"
-                        style="background-color: #28a745; color: #fff; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">
-                        Confirm Appointment
-                    </a>
-                </div>
                 <p style="font-style: italic;">If you did not request this appointment, please ignore this email. Thank you!</p>
                 <hr style="border: none; border-top: 1px solid #ddd;">
                 <p style="color: #777; font-size: 14px;">For any inquiries, please contact <strong>CareFlow.com 🩺</strong> via email or phone.</p>
+                <p>Email: CareFlow@gmail.com</p>
+                <p>Phone: 0132659874</p>
             </div>
 
         `;
@@ -78,7 +68,7 @@ let sendAttachment = async (dataSend) => {
       pass: process.env.EMAIL_APP_PASSWORD,
     },
   });
-  console.log("Base64 Image Data: ", dataSend.imgBase64.substring(0, 100)); // Log 100 ký tự đầu
+  // console.log("Base64 Image Data: ", dataSend.imgBase64.substring(0, 100)); // Log 100 ký tự đầu
 
   let info = await transporter.sendMail({
     from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>', // sender address

@@ -43,7 +43,23 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "hospitalId",
         as: "hospital",
       });
+      // 1 bệnh nhân có 1 hồ sơ sức khỏe
+      User.hasOne(models.Patient_Profile, {
+        foreignKey: "userId",
+        as: "patientProfile",
+      });
 
+      // 1 bệnh nhân có nhiều hồ sơ bệnh án
+      User.hasMany(models.Medical_Record, {
+        foreignKey: "patientId",
+        as: "medicalRecords",
+      });
+
+      // 1 bác sĩ có nhiều hồ sơ bệnh án (do mình khám)
+      User.hasMany(models.Medical_Record, {
+        foreignKey: "doctorId",
+        as: "doctorRecords",
+      });
     }
   }
   User.init(

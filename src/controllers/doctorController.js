@@ -159,6 +159,52 @@ let sendRemedy = async (req, res) => {
     }
 }
 
+let createMedicalRecord = async (req, res) => {
+  try {
+    const file = req.file ? req.file.buffer : null; // buffer PDF
+    const mimeType = req.file ? req.file.mimetype : null;
+    const fileName = req.file ? req.file.originalname : null;
+
+    const data = {
+      ...req.body,
+      file,
+      fileMime: mimeType,
+      fileName,
+    };
+
+    const response = await doctorService.createMedicalRecord(data);
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("Error in createMedicalRecord:", error);
+    return res.status(500).json({
+      errCode: -1,
+      errMessage: "Error from server",
+    });
+  }
+};
+
+
+let getMedicalRecordsByPatient = async (req, res) => {
+  try {
+    const { patientId } = req.query;
+    const response = await doctorService.getMedicalRecordsByPatient(patientId);
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("Error in getMedicalRecordsByPatient:", error);
+    return res.status(500).json({ errCode: -1, errMessage: "Error from server" });
+  }
+};
+let handleDeleteMedicalRecord = async (req, res) => {
+    if(!req.body.id) {
+        return res.status(200).json({
+            errCode: 1,
+            errMessage: "Missing required parameters!"
+        })
+    }
+    let message = await doctorService.handleDeleteMedicalRecord(req.body.id);
+    return res.status(200).json(message);
+}
+
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
     getGetAllDoctor: getGetAllDoctor,
@@ -172,4 +218,7 @@ module.exports = {
     sendRemedy: sendRemedy,
     getAllDoctorConfig: getAllDoctorConfig,
     updateBookingStatus: updateBookingStatus,
+    createMedicalRecord: createMedicalRecord,
+    getMedicalRecordsByPatient: getMedicalRecordsByPatient,
+    handleDeleteMedicalRecord: handleDeleteMedicalRecord
 }

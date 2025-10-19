@@ -340,7 +340,14 @@ let getScheduleByDateService = async (doctorId, date) => {
                 let data = await db.Schedule.findAll({
                     where: {
                         doctorId: doctorId,
-                        date: date
+                        date: date,
+                        [db.Sequelize.Op.and]: [
+                            db.Sequelize.where(
+                                db.Sequelize.col("currentNumber"),
+                                "<",
+                                db.Sequelize.col("maxNumber")
+                            )
+                        ]
                     },
                     include: [   
                         { model: db.Datacode, as: 'timeTypeData', attributes: ['valueEn', 'valueVi'] },
@@ -500,11 +507,13 @@ let getListPatientForDoctor = (doctorId, date, status) => {
                             model: db.User,
                             as: 'patientData',
                             attributes: {
-                                exclude: ['password', 'positionId', 'hospitalId']
+                                exclude: ['password', 'positionId', 'hospitalId', 'avatar']
                             },
                             include: [
                                 { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
                                 { model: db.Province, as: 'provinceData', attributes: ['code', 'name'] },
+                                { model: db.Patient_Profile, as: 'patientProfile' },
+                                { model: db.Medical_Record, as: 'medicalRecords' },
                             ],
                         },
                         {
@@ -632,7 +641,7 @@ let sendRemedy = (data) => {
                 })
 
                 if (appointment) {
-                    appointment.statusId = 'S3'
+                    appointment.statusId = 'S4'
                     await appointment.save()
                 }
 
@@ -651,6 +660,231 @@ let sendRemedy = (data) => {
     })
 }
 
+// const createMedicalRecord = async (data) => {
+//   const t = await db.sequelize.transaction();
+//   try {
+//     const {
+//       patientId,
+//       doctorId,
+//       bookingId,
+//       description,
+//       file,
+//       updateBy,
+//       height,
+//       weight,
+//       underlying_diseases,
+//       allergies,
+//       medical_history,
+//     } = data;
+// console.log("👉 Received data:", data);
+// console.log("patientId:", patientId, "doctorId:", doctorId, "bookingId:", bookingId);
+
+//     if (!patientId || !doctorId || !bookingId) {
+//       await t.rollback();
+//       return { errCode: 1, errMessage: "Missing required parameters!" };
+//     }
+
+//     // 1. Upsert Patient_Profile
+//     const existingProfile = await db.Patient_Profile.findOne({
+//       where: { userId: patientId },
+//       transaction: t,
+//     });
+
+//     if (existingProfile) {
+//       await existingProfile.update(
+//         {
+//           height: height ?? existingProfile.height,
+//           weight: weight ?? existingProfile.weight,
+//           underlying_diseases:
+//             underlying_diseases ?? existingProfile.underlying_diseases,
+//           allergies: allergies ?? existingProfile.allergies,
+//           medical_history: medical_history ?? existingProfile.medical_history,
+//         },
+//         { transaction: t }
+//       );
+//     } else {
+//       await db.Patient_Profile.create(
+//         {
+//           userId: patientId,
+//           height: height ?? null,
+//           weight: weight ?? null,
+//           underlying_diseases: underlying_diseases ?? null,
+//           allergies: allergies ?? null,
+//           medical_history: medical_history ?? null,
+//         },
+//         { transaction: t }
+//       );
+//     }
+
+//     // 2. Tạo Medical_Record
+//     const record = await db.Medical_Record.create(
+//       {
+//         patientId,
+//         doctorId,
+//         bookingId,
+//         description,
+//         file: file || null,
+//         updateBy: updateBy || doctorId,
+//       },
+//       { transaction: t }
+//     );
+
+//     await t.commit();
+
+//     return { errCode: 0, message: "Create medical record success", record };
+//   } catch (error) {
+//     await t.rollback();
+//     console.error("Error createMedicalRecord:", error);
+//     return { errCode: -1, errMessage: "Error from server" };
+//   }
+// };
+
+let createMedicalRecord = async (data) => {
+  const t = await db.sequelize.transaction();
+  try {
+    const {
+      patientId,
+      doctorId,
+      bookingId,
+      description,
+      file,
+      fileMime,
+      fileName,
+      updateBy,
+      height,
+      weight,
+      underlying_diseases,
+      allergies,
+      medical_history,
+    } = data;
+
+    if (!patientId || !doctorId || !bookingId) {
+      await t.rollback();
+      return { errCode: 1, errMessage: "Missing required parameters!" };
+    }
+
+    // Update hoặc tạo Patient_Profile
+    const existingProfile = await db.Patient_Profile.findOne({
+      where: { userId: patientId },
+      transaction: t,
+      raw: false,
+    });
+
+    if (existingProfile) {
+      await existingProfile.update(
+        {
+          height: height ?? existingProfile.height,
+          weight: weight ?? existingProfile.weight,
+          underlying_diseases: underlying_diseases ?? existingProfile.underlying_diseases,
+          allergies: allergies ?? existingProfile.allergies,
+          medical_history: medical_history ?? existingProfile.medical_history,
+        },
+        { transaction: t }
+      );
+    } else {
+      await db.Patient_Profile.create(
+        {
+          userId: patientId,
+          height,
+          weight,
+          underlying_diseases,
+          allergies,
+          medical_history,
+        },
+        { transaction: t }
+      );
+    }
+
+    // Kiểm tra Medical_Record với bookingId
+    let record = await db.Medical_Record.findOne({
+      where: { bookingId },
+      transaction: t,
+      raw: false,
+    });
+
+    let action = "created";
+
+    if (record) {
+      await record.update(
+        {
+          patientId,
+          doctorId,
+          description,
+          file,
+          fileMime,
+          fileName,
+          updateBy: updateBy || doctorId,
+        },
+        { transaction: t }
+      );
+      action = "updated";
+    } else {
+      record = await db.Medical_Record.create(
+        {
+          patientId,
+          doctorId,
+          bookingId,
+          description,
+          file,
+          fileMime,
+          fileName,
+          updateBy: updateBy || doctorId,
+        },
+        { transaction: t }
+      );
+    }
+
+    await t.commit();
+    return { errCode: 0, message: `Medical record ${action} successfully`, action, record };
+  } catch (error) {
+    await t.rollback();
+    console.error("Error create/UpdateMedicalRecord:", error);
+    return { errCode: -1, errMessage: "Error from server" };
+  }
+};
+
+
+const getMedicalRecordsByPatient = async (patientId) => {
+  try {
+    if (!patientId) return { errCode: 1, errMessage: "Missing patientId" };
+
+    const records = await db.Medical_Record.findAll({
+      where: { patientId },
+      include: [
+        { model: db.User, as: "doctor", attributes: ["id", "fullName", "positionId"] },
+        { model: db.Booking, as: "booking", attributes: ["id", "date", "timeType"] },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    return { errCode: 0, records };
+  } catch (error) {
+    console.error("Error getMedicalRecordsByPatient:", error);
+    return { errCode: -1, errMessage: "Error from server" };
+  }
+};
+
+let handleDeleteMedicalRecord = (medicalRecordId) => {
+  return new Promise(async (resolve, reject) => {
+    let medicalRecord = await db.Medical_Record.findOne({
+      where: { id: medicalRecordId },
+      raw: false,
+    });
+    if (!medicalRecord) {
+      resolve({
+        errCode: 2,
+        errMessage: `The medicalRecord isn't exist`,
+      });
+    }
+
+    await medicalRecord.destroy();
+    resolve({
+      errCode: 0,
+      errMessage: `Delete medicalRecord success`,
+    });
+  });
+};
+
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
     getAllDoctors: getAllDoctors,
@@ -663,5 +897,8 @@ module.exports = {
     getListPatientForDoctor: getListPatientForDoctor,
     sendRemedy: sendRemedy,
     getAllDoctorConfig: getAllDoctorConfig,
-    updateBookingStatus: updateBookingStatus
+    updateBookingStatus: updateBookingStatus,
+    createMedicalRecord: createMedicalRecord,
+    getMedicalRecordsByPatient: getMedicalRecordsByPatient,
+    handleDeleteMedicalRecord: handleDeleteMedicalRecord,
 }

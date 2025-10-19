@@ -25,18 +25,9 @@ let postBookApointment = (data) => {
           errMessage: "Missing parameter...",
         });
       } else {
-        // 1. Gửi email
         let token = uuidv4();
-        await emailService.sendSimpleEmail({
-          receiverEmail: data.email,
-          patientName: data.fullName,
-          time: data.timeString,
-          doctorName: data.doctorName,
-          language: data.language,
-          redirectLink: buildUrlEmail(data.doctorId, token),
-        });
 
-        // 2. Upsert patient
+        // 1. Upsert patient
         let user = await db.User.findOrCreate({
           where: { email: data.email },
           defaults: {
@@ -49,7 +40,7 @@ let postBookApointment = (data) => {
         });
 
         if (user && user[0]) {
-          // 3. Tạo Booking
+          // 2. Tạo Booking
           let [booking, created] = await db.Booking.findOrCreate({
             where: {
               patientId: user[0].id,
@@ -69,6 +60,26 @@ let postBookApointment = (data) => {
             },
           });
           if (created) {
+            // 4.Tăng số lượng bệnh nhân trong slot
+            await db.Schedule.increment("currentNumber", {
+              by: 1,
+              where: {
+                doctorId: data.doctorId,
+                date: data.date,
+                timeType: data.timeType,
+              },
+            });
+
+            // 5. Gửi email
+            await emailService.sendSimpleEmail({
+              receiverEmail: data.email,
+              patientName: data.fullName,
+              time: data.timeString,
+              doctorName: data.doctorName,
+              language: data.language,
+              redirectLink: buildUrlEmail(data.doctorId, token),
+            });
+            // 6.Thông báo cho bác sĩ
             await notificationService.createNotification({
               senderId: user[0].id,       // người đặt
               receiverId: data.doctorId,  // bác sĩ nhận
@@ -76,6 +87,8 @@ let postBookApointment = (data) => {
               message: `Bạn có lịch hẹn mới từ ${data.fullName}`,
               url: "/doctor/waiting-approval",
             });
+            
+            
           }
         }
 
@@ -215,24 +228,25 @@ let getDoneAppointment = (inputId) => {
         let appointments = await db.Booking.findAll({
           where: {
             patientId: inputId,
-            statusId: "S3",
+            statusId: "S4",
           },
           attributes: ["statusId", "patientId", "date", "timeType"],
           include: [
             {
               model: db.Doctor_Infor,
               as: "doctorInfoData",
-              attributes: [
-                "doctorId",
-                "addressClinic",
-                "nameClinic",
-                "priceId",
-              ],
+              attributes: ["doctorId", "hospitalId", "specialtyId"],
               include: [
                 {
-                  model: db.Allcode,
-                  as: "priceTypeData",
-                  attributes: ["valueEn", "valueVi"],
+                  model: db.Hospital,
+                  as: "hospital",
+                  attributes: ["name", "addressDetail", "provinceId"],
+                  include: [
+                    {
+                      model: db.Province,
+                      as: "provinceData",
+                    },
+                  ],
                 },
               ],
             },
@@ -242,19 +256,19 @@ let getDoneAppointment = (inputId) => {
               attributes: ["fullName"],
               include: [
                 {
-                  model: db.Allcode,
+                  model: db.Datacode,
                   as: "positionData",
                   attributes: ["valueEn", "valueVi"],
                 },
               ],
             },
             {
-              model: db.Allcode,
+              model: db.Datacode,
               as: "timeTypeDataPatient",
               attributes: ["valueEn", "valueVi"],
             },
             {
-              model: db.Allcode,
+              model: db.Datacode,
               as: "statusData",
               attributes: ["valueEn", "valueVi"],
             },

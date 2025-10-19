@@ -2,7 +2,12 @@
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class Patient_Profile extends Model {
-    static associate(models) {}
+    static associate(models) {
+      Patient_Profile.belongsTo(models.User, {
+        foreignKey: "userId",
+        as: "user",
+      });
+    }
   }
 
   Patient_Profile.init(
@@ -18,6 +23,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: "Patient_Profile",
       freezeTableName: true,
+      timestamps: false,
     }
   );
   return Patient_Profile;

@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import homeController from "../controllers/homeController";
 import userController from "../controllers/userController";
 import doctorController from "../controllers/doctorController";
@@ -9,6 +10,9 @@ import chatbotController  from "../controllers/chatbotController";
 import { checkUserJWT, verifyCaptcha } from "../middleware/JWTAction";
 import notificationController from "../controllers/notificationController";
 let router = express.Router();
+// Cấu hình multer (lưu file trong bộ nhớ RAM)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 let initWebRoutes = (app) => {
     router.get('/', homeController.getHomePage);
@@ -41,6 +45,9 @@ let initWebRoutes = (app) => {
     router.get("/api/get-list-patient-for-doctor", doctorController.getListPatientForDoctor);
     router.post("/api/send-remedy", doctorController.sendRemedy);
     router.put("/api/update-booking-status", doctorController.updateBookingStatus);
+    // router.post("/api/create-medical-record", doctorController.createMedicalRecord);
+    router.post("/api/create-medical-record", upload.single("file"), doctorController.createMedicalRecord);
+    router.delete('/api/delete-medical-record', doctorController.handleDeleteMedicalRecord);
 
     router.post("/api/create-new-specialty", specialtyController.createSpecialty);
     router.get("/api/get-all-specialty", specialtyController.getAllSpecialty);
