@@ -37,7 +37,8 @@ let handleUserLogin = (email, password) => {
             "dateOfBirth",
             "CCCD",
             "positionId",
-            "status"
+            "status",
+            "hospitalId"
           ],
           raw: true,
         });
@@ -73,7 +74,8 @@ let handleUserLogin = (email, password) => {
               dateOfBirth: user.dateOfBirth,
               CCCD: user.CCCD,
               positionId: user.positionId,
-              status: user.status
+              status: user.status,
+              hospitalId: user.hospitalId
             };
           } else {
             userData.errCode = 3;

@@ -19,7 +19,8 @@ let handleLogin = async (req, res) => {
             secure: false,          // nếu chạy HTTPS (production) thì để true
             sameSite: "lax", 
             domain: "localhost",
-            maxAge: 60 * 60 * 1000, // 1 giờ
+            // maxAge: 60 * 60 * 1000, // 1 giờ
+            maxAge: 24 * 60 * 60 * 1000, // 1 ngày
             });
         }
         return res.status(200).json({
