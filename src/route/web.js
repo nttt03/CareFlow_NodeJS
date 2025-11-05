@@ -9,6 +9,7 @@ import hospitalController from "../controllers/hospitalController";
 import chatbotController  from "../controllers/chatbotController";
 import { checkUserJWT, verifyCaptcha } from "../middleware/JWTAction";
 import notificationController from "../controllers/notificationController";
+import StatisticController from "../controllers/StatisticController";
 let router = express.Router();
 // Cấu hình multer (lưu file trong bộ nhớ RAM)
 const storage = multer.memoryStorage();
@@ -76,6 +77,9 @@ let initWebRoutes = (app) => {
     router.put('/api/update-info-by-user', checkUserJWT, patientController.updateInfoByUser);
     router.post("/api/toggle-favorite", patientController.toggleFavorite);
     router.get("/api/get-favorites", patientController.getUserFavorites);
+
+    router.get("/api/doctor/:doctorId/statistics", StatisticController.getDoctorStatistics);
+    router.get("/api/hospital/:hospitalId/statistics", StatisticController.getHospitalStatistics);
 
     // Tạo thông báo
     router.post("/api/notification", notificationController.createNotification);

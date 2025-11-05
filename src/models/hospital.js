@@ -18,6 +18,10 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: "keyMap",
         as: "statusData",
       });
+      Hospital.hasMany(models.Hospital_Specialties, {
+        foreignKey: "hospitalId",
+        as: "hospital_specialties",
+      });
     }
   }
   Hospital.init(
