@@ -80,14 +80,17 @@ let handleUserLogin = (email, password) => {
           } else {
             userData.errCode = 3;
             userData.errMessage = "Sai mật khẩu!";
+            userData.messageEn = 'Wrong password!'
           }
         } else {
           userData.errCode = 2;
           userData.errMessage = `Không tìm thấy người dùng này!`;
+          userData.messageEn = 'This user was not found!'
         }
       } else {
         userData.errCode = 1;
         userData.errMessage = `Email không tồn tại. Vui lòng thử lại bằng email khác!`;
+        userData.messageEn = 'Email does not exist. Please try again with another email!'
       }
       resolve(userData);
     } catch (e) {

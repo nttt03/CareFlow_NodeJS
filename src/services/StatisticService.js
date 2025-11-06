@@ -210,7 +210,156 @@ const getHospitalStatistics = async (hospitalId) => {
   }
 };
 
+const getAdminStatistics = async () => {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // 1. Tổng quan hệ thống
+    const totalHospitals = await db.Hospital.count();
+    const totalDoctors = await db.Doctor_Infor.count();
+    const totalPatients = await db.User.count({
+      where: { roleId: "R3" },
+    });
+    const totalBookings = await db.Booking.count();
+    const todayBookings = await db.Booking.count({
+      where: {
+        date: {
+          [Op.between]: [todayStart.getTime(), todayEnd.getTime()],
+        },
+      },
+    });
+
+    // 2. Lịch hẹn theo trạng thái (toàn hệ thống)
+    const bookingsByStatus = await db.Booking.findAll({
+      attributes: [
+        "statusId",
+        [db.sequelize.fn("COUNT", db.sequelize.col("id")), "count"],
+      ],
+      group: ["statusId"],
+      raw: true,
+    });
+
+    // 3. Lịch hẹn theo 7 ngày gần nhất
+    const last7DaysBookings = await db.Booking.findAll({
+      attributes: [
+        [db.sequelize.fn("DATE", db.sequelize.literal("FROM_UNIXTIME(`date`/1000)")), "date"],
+        [db.sequelize.fn("COUNT", db.sequelize.col("id")), "count"],
+      ],
+      where: {
+        date: {
+          [Op.gte]: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime(),
+        },
+      },
+      group: [db.sequelize.fn("DATE", db.sequelize.literal("FROM_UNIXTIME(`date`/1000)"))],
+      order: [[db.sequelize.literal("date"), "ASC"]],
+      raw: true,
+    });
+
+    // 4. Top 5 bệnh viện có nhiều lịch hẹn nhất
+    const topHospitals = await db.Booking.findAll({
+      attributes: [
+        "hospitalId",
+        [db.sequelize.fn("COUNT", db.sequelize.col("Booking.id")), "totalBookings"],
+      ],
+      include: [
+        {
+          model: db.Hospital,
+          as: "hospitalData",
+          attributes: ["name", "image"],
+        },
+      ],
+      group: ["hospitalId"],
+      order: [[db.sequelize.literal("totalBookings"), "DESC"]],
+      limit: 5,
+      raw: true,
+      nest: true,
+    });
+
+    // 5. Top 5 chuyên khoa toàn hệ thống
+    const topSpecialties = await db.Booking.findAll({
+      attributes: [
+        [db.sequelize.col("doctorInfoData.specialty.name"), "specialtyName"],
+        [db.sequelize.fn("COUNT", db.sequelize.col("Booking.id")), "totalBookings"],
+      ],
+      include: [
+        {
+          model: db.Doctor_Infor,
+          as: "doctorInfoData",
+          include: [
+            {
+              model: db.Specialty,
+              as: "specialty",
+              attributes: ["name"],
+            },
+          ],
+        },
+      ],
+      group: [db.sequelize.col("doctorInfoData.specialty.name")],
+      order: [[db.sequelize.literal("totalBookings"), "DESC"]],
+      limit: 5,
+      raw: true,
+      nest: true,
+    });
+
+    // 6. Top 5 bác sĩ toàn hệ thống
+    const topDoctors = await db.Booking.findAll({
+      attributes: [
+        "doctorId",
+        [db.sequelize.fn("COUNT", db.sequelize.col("Booking.id")), "totalBookings"],
+      ],
+      include: [
+        {
+          model: db.User,
+          as: "infoDataDoctor",
+          attributes: ["fullName", "avatar"],
+        },
+      ],
+      group: ["doctorId"],
+      order: [[db.sequelize.literal("totalBookings"), "DESC"]],
+      limit: 5,
+      raw: true,
+      nest: true,
+    });
+
+    return {
+      overview: {
+        totalHospitals,
+        totalDoctors,
+        totalPatients,
+        totalBookings,
+        todayBookings,
+      },
+      bookingsByStatus,
+      last7DaysBookings: last7DaysBookings.map(item => ({
+        date: item.date,
+        count: Number(item.count),
+      })),
+      topHospitals: topHospitals.map(h => ({
+        hospitalName: h.hospitalData?.name || "Unknown",
+        hospitalImg: h.hospitalData?.image,
+        totalBookings: Number(h.totalBookings),
+      })),
+      topSpecialties: topSpecialties.map(s => ({
+        specialtyName: s.specialtyName || "Unknown",
+        totalBookings: Number(s.totalBookings),
+      })),
+      topDoctors: topDoctors.map(d => ({
+        doctorName: d.infoDataDoctor?.fullName || "Unknown",
+        avatar: d.infoDataDoctor?.avatar,
+        totalBookings: Number(d.totalBookings),
+      })),
+    };
+  } catch (error) {
+    console.error("Error in getAdminStatistics service:", error);
+    throw error;
+  }
+};
+
 module.exports = {
   getDoctorStatistics: getDoctorStatistics,
   getHospitalStatistics: getHospitalStatistics,
+  getAdminStatistics: getAdminStatistics
 };

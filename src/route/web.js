@@ -80,6 +80,7 @@ let initWebRoutes = (app) => {
 
     router.get("/api/doctor/:doctorId/statistics", StatisticController.getDoctorStatistics);
     router.get("/api/hospital/:hospitalId/statistics", StatisticController.getHospitalStatistics);
+    router.get("/api/admin/statistics", StatisticController.getAdminStatistics);
 
     // Tạo thông báo
     router.post("/api/notification", notificationController.createNotification);

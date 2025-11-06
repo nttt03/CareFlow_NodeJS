@@ -38,7 +38,26 @@ let getHospitalStatistics = async (req, res) => {
   }
 };
 
+let getAdminStatistics = async (req, res) => {
+  try {
+    const stats = await StatisticService.getAdminStatistics();
+    return res.status(200).json({
+      errCode: 0,
+      errMessage: "Get admin statistics successfully",
+      data: stats,
+    });
+  } catch (error) {
+    console.error("Error in getAdminStatistics controller:", error);
+    return res.status(500).json({
+      errCode: 1,
+      errMessage: "Error while getting admin statistics",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getDoctorStatistics: getDoctorStatistics,
   getHospitalStatistics: getHospitalStatistics,
+  getAdminStatistics: getAdminStatistics
 };

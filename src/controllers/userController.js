@@ -8,6 +8,7 @@ let handleLogin = async (req, res) => {
             return res.status(400).json({
                 errCode: 1,
                 message: 'Vui lòng nhập đầy đủ thông tin!',
+                messageEn: 'Please enter complete information!'
             })
         }
         let userData = await userServise.handleUserLogin(email, password);
@@ -26,6 +27,7 @@ let handleLogin = async (req, res) => {
         return res.status(200).json({
             errCode: userData.errCode,
             message: userData.errMessage,
+            messageEn: userData.messageEn,
             user: userData.user ? userData.user : {}
         })
     } catch (e) {
