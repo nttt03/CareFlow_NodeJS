@@ -83,9 +83,17 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
       },
       hospitalId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      resetPasswordToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      resetPasswordExpires: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
     },
     {
       sequelize,

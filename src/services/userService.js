@@ -2,6 +2,8 @@ import { where } from "sequelize";
 import db from "../models/index";
 import { createJWT } from "../middleware/JWTAction";
 import bcrypt from "bcryptjs";
+import {sendResetPasswordEmail} from "../services/emailService";
+import crypto from "crypto";
 
 const salt = bcrypt.genSaltSync(10);
 let hashUserPassword = (password) => {
@@ -450,6 +452,87 @@ let getAllProvince = () => {
   });
 };
 
+let handleForgotPassword = async (email) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let user = await db.User.findOne({ where: { email }, raw: false });
+      if (!user) {
+        return resolve({
+          errCode: 2,
+          errMessage: "Email không tồn tại!",
+        });
+      }
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const expires = Date.now() + 15 * 60 * 1000; // 15 phút
+
+      user.resetPasswordToken = token;
+      user.resetPasswordExpires = expires;
+      await user.save();
+
+      let resetLink = `${process.env.URL_REACT}/reset-password?token=${token}`;
+
+      await sendResetPasswordEmail({
+        receiverEmail: email,
+        resetLink: resetLink,
+      });
+
+      resolve({
+        errCode: 0,
+        errMessage: "Email reset mật khẩu đã được gửi!",
+      });
+
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+let handleResetPassword = async (token, newPassword) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let user = await db.User.findOne({
+        where: {
+          resetPasswordToken: token,
+        },
+        raw: false,
+      });
+
+      if (!user) {
+        return resolve({
+          errCode: 2,
+          errMessage: "Token không hợp lệ!",
+        });
+      }
+
+      if (user.resetPasswordExpires < Date.now()) {
+        return resolve({
+          errCode: 3,
+          errMessage: "Token đã hết hạn!",
+        });
+      }
+
+      // Hash password mới
+      let hashedPassword = await hashUserPassword(newPassword);
+      user.password = hashedPassword;
+
+      // clear token
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+
+      await user.save();
+
+      resolve({
+        errCode: 0,
+        errMessage: "Đặt lại mật khẩu thành công!",
+      });
+
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 module.exports = {
   handleUserLogin: handleUserLogin,
   registerNewUser: registerNewUser,
@@ -460,4 +543,7 @@ module.exports = {
   getAllCodeService: getAllCodeService,
   getAllProvince: getAllProvince,
   handleChangePassword: handleChangePassword,
+  handleForgotPassword: handleForgotPassword,
+  handleResetPassword: handleResetPassword,
+
 };

@@ -173,8 +173,51 @@ let getBodyHTMLEmailReminder = (dataSend) => {
   return result;
 };
 
+let sendResetPasswordEmail = async (dataSend) => {
+  let transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_APP,
+      pass: process.env.EMAIL_APP_PASSWORD,
+    },
+  });
+
+  let info = await transporter.sendMail({
+    from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>',
+    to: dataSend.receiverEmail,
+    subject: "Đặt lại mật khẩu - CareFlow",
+    html: getResetPasswordHTML(dataSend),
+  });
+};
+
+let getResetPasswordHTML = (dataSend) => {
+  return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin:auto; padding:20px; border:1px solid #ddd; border-radius:8px">
+      <h2 style="color:#2c3e50;">Yêu cầu đặt lại mật khẩu</h2>
+      <p>Xin chào,</p>
+      <p>Bạn đã yêu cầu đặt lại mật khẩu tại <b>CareFlow</b>.</p>
+      <p>Vui lòng nhấn vào nút bên dưới để đặt lại mật khẩu (hiệu lực 15 phút):</p>
+
+      <a href="${dataSend.resetLink}"
+        style="display:inline-block; padding:12px 18px; background:#007bff; color:#fff; text-decoration:none; border-radius:5px; margin:15px 0">
+        Đặt lại mật khẩu
+      </a>
+
+      <p>Nếu không phải bạn yêu cầu, vui lòng bỏ qua email này.</p>
+
+      <hr />
+      <p style="font-size:12px; color:#777;">
+          CareFlow © ${new Date().getFullYear()}
+      </p>
+  </div>
+  `;
+};
+
 module.exports = {
   sendSimpleEmail: sendSimpleEmail,
   sendAttachment: sendAttachment,
   sendReminderEmail: sendReminderEmail,
+  sendResetPasswordEmail: sendResetPasswordEmail
 };

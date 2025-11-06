@@ -177,6 +177,64 @@ let getAllProvince = async (req, res) => {
     }
 }
 
+let handleForgotPassword = async (req, res) => {
+    try {
+        let { email } = req.body;
+        if (!email) {
+            return res.status(200).json({
+                errCode: 1,
+                errMessage: "Vui lòng nhập email!",
+            });
+        }
+
+        let data = await userServise.handleForgotPassword(email);
+
+        return res.status(200).json({
+            errCode: data.errCode,
+            errMessage: data.errMessage,
+        });
+
+    } catch (e) {
+        return res.status(500).json({
+            errMessage: "Server error!",
+            errCode: -1,
+        });
+    }
+}
+
+let handleResetPassword = async (req, res) => {
+    try {
+        let { token, newPassword } = req.body;
+
+        if (!token || !newPassword) {
+            return res.status(200).json({
+                errCode: 1,
+                errMessage: "Thiếu token hoặc mật khẩu mới!",
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(200).json({
+                errCode: 1,
+                errMessage: "Mật khẩu mới phải từ 6 ký tự trở lên!",
+            });
+        }
+
+        let data = await userServise.handleResetPassword(token, newPassword);
+
+        return res.status(200).json({
+            errCode: data.errCode,
+            errMessage: data.errMessage,
+        });
+
+    } catch (e) {
+        return res.status(500).json({
+            errMessage: "Server error!",
+            errCode: -1,
+        });
+    }
+}
+
 module.exports = {
     handleLogin: handleLogin,
     handleRegister: handleRegister,
@@ -186,5 +244,8 @@ module.exports = {
     handleDeleteUser: handleDeleteUser,
     getAllCode: getAllCode,
     getAllProvince: getAllProvince,
-    handleChangePassword: handleChangePassword
+    handleChangePassword: handleChangePassword,
+    handleForgotPassword: handleForgotPassword,
+    handleResetPassword: handleResetPassword,
+
 }
