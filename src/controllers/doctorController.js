@@ -132,6 +132,32 @@ let getListPatientForDoctor = async (req, res) => {
     }
 }
 
+let getListBookingApproval = async (req, res) => {
+    try {
+        let infor = await doctorService.getListBookingApproval(req.query.date, req.query.status);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from server...'
+        })
+    }
+}
+
+let getListMedicalRecord = async (req, res) => {
+    try {
+        let infor = await doctorService.getListMedicalRecord(req.query.date, req.query.status);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from server...'
+        })
+    }
+}
+
 let updateBookingStatus = async (req, res) => {
   try {
     let data = req.body;
@@ -220,5 +246,7 @@ module.exports = {
     updateBookingStatus: updateBookingStatus,
     createMedicalRecord: createMedicalRecord,
     getMedicalRecordsByPatient: getMedicalRecordsByPatient,
-    handleDeleteMedicalRecord: handleDeleteMedicalRecord
+    handleDeleteMedicalRecord: handleDeleteMedicalRecord,
+    getListBookingApproval: getListBookingApproval,
+    getListMedicalRecord: getListMedicalRecord
 }

@@ -537,6 +537,101 @@ let getListPatientForDoctor = (doctorId, date, status) => {
         }
     })
 }
+let getListBookingApproval = (date, status) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let whereCondition = {
+                    statusId: status
+                };
+
+                if (date) {
+                    whereCondition.date = date;
+                }
+
+                let data = await db.Booking.findAll({
+                    where: whereCondition,
+                    include: [
+                        {
+                            model: db.User,
+                            as: 'patientData',
+                            attributes: {
+                                exclude: ['password', 'positionId', 'hospitalId', 'avatar']
+                            },
+                            include: [
+                                { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Province, as: 'provinceData', attributes: ['code', 'name'] },
+                                { model: db.Patient_Profile, as: 'patientProfile' },
+                                { model: db.Medical_Record, as: 'medicalRecords' },
+                            ],
+                        },
+                        {
+                            model: db.Datacode,
+                            as: 'timeTypeDataPatient',
+                            attributes: ['valueEn', 'valueVi'],
+                        }
+                    ],
+                    raw: false,
+                    nest: true
+                });
+
+                resolve({
+                    errCode: 0,
+                    data: data
+                });
+
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
+
+let getListMedicalRecord = (date, status) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let whereCondition = {
+                    statusId: status
+                };
+
+                if (date) {
+                    whereCondition.date = date;
+                }
+
+                let data = await db.Booking.findAll({
+                    where: whereCondition,
+                    include: [
+                        {
+                            model: db.User,
+                            as: 'patientData',
+                            attributes: {
+                                exclude: ['password', 'positionId', 'hospitalId', 'avatar']
+                            },
+                            include: [
+                                { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Province, as: 'provinceData', attributes: ['code', 'name'] },
+                                { model: db.Patient_Profile, as: 'patientProfile' },
+                                { model: db.Medical_Record, as: 'medicalRecords' },
+                            ],
+                        },
+                        {
+                            model: db.Datacode,
+                            as: 'timeTypeDataPatient',
+                            attributes: ['valueEn', 'valueVi'],
+                        }
+                    ],
+                    raw: false,
+                    nest: true
+                });
+
+                resolve({
+                    errCode: 0,
+                    data: data
+                });
+
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
 
 let updateBookingStatus = (data) => {
   return new Promise(async (resolve, reject) => {
@@ -901,4 +996,6 @@ module.exports = {
     createMedicalRecord: createMedicalRecord,
     getMedicalRecordsByPatient: getMedicalRecordsByPatient,
     handleDeleteMedicalRecord: handleDeleteMedicalRecord,
+    getListBookingApproval: getListBookingApproval,
+    getListMedicalRecord: getListMedicalRecord
 }

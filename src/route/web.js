@@ -51,6 +51,8 @@ let initWebRoutes = (app) => {
     // router.post("/api/create-medical-record", doctorController.createMedicalRecord);
     router.post("/api/create-medical-record", upload.single("file"), doctorController.createMedicalRecord);
     router.delete('/api/delete-medical-record', doctorController.handleDeleteMedicalRecord);
+    router.get("/api/get-list-booking-approval", doctorController.getListBookingApproval);
+    router.get("/api/get-list-medical-record", doctorController.getListMedicalRecord);
 
     router.post("/api/create-new-specialty", specialtyController.createSpecialty);
     router.get("/api/get-all-specialty", specialtyController.getAllSpecialty);
