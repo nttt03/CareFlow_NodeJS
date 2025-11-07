@@ -28,6 +28,19 @@ let getGetAllDoctor = async (req, res) => {
     }
 }
 
+let getAllLeaderHospital = async (req, res) => {
+    try {
+        let leaders = await doctorService.getAllLeaderHospital();
+        return res.status(200).json(leaders)
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from server...'
+        })
+    }
+}
+
 let getAllDoctorConfig = async (req, res) => {
     try {
         let doctors = await doctorService.getAllDoctorConfig();
@@ -248,5 +261,6 @@ module.exports = {
     getMedicalRecordsByPatient: getMedicalRecordsByPatient,
     handleDeleteMedicalRecord: handleDeleteMedicalRecord,
     getListBookingApproval: getListBookingApproval,
-    getListMedicalRecord: getListMedicalRecord
+    getListMedicalRecord: getListMedicalRecord,
+    getAllLeaderHospital: getAllLeaderHospital
 }

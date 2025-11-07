@@ -174,6 +174,29 @@ const saveDoctorsForHospital = async (req, res) => {
   }
 };
 
+let saveLeaderForHospital = async (req, res) => {
+  try {
+    const { hospitalId, leaderId } = req.body;
+
+    if (!hospitalId || !leaderId) {
+      return res.status(400).json({
+        errCode: 1,
+        message: "Missing hospitalId or leaderId",
+      });
+    }
+
+    const result = await hospitalService.saveLeaderForHospitalService(hospitalId, leaderId);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error hospitalController.saveLeaderForHospital:", error);
+    return res.status(500).json({
+      errCode: -1,
+      message: "Error from server",
+    });
+  }
+};
+
 let savePriceForHospital = async (req, res) => {
   try {
     const { hospitalId, specialtyId, price } = req.body;
@@ -212,5 +235,6 @@ module.exports = {
     getSpecialtiesByHospital: getSpecialtiesByHospital,
     getDoctorsByHospital: getDoctorsByHospital,
     saveDoctorsForHospital: saveDoctorsForHospital,
-    savePriceForHospital: savePriceForHospital
+    savePriceForHospital: savePriceForHospital,
+    saveLeaderForHospital: saveLeaderForHospital
 }

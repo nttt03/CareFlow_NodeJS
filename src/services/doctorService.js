@@ -10,41 +10,52 @@ let getTopDoctorHome = (limit) => {
     return new Promise(async(resolve, reject) => {
         try {
             let users = await db.User.findAll({
-                limit: limit,
-                where: { roleId: 'R2'},
-                order: [['createdAt', 'DESC']],
+                where: { roleId: 'R2', status: 'A1' },
                 attributes: {
-                    exclude: ['password']
+                    exclude: ['password', 'resetPasswordExpires', 'resetPasswordToken'],
+                    include: [
+                        // Dùng literal để COUNT trực tiếp trong subquery
+                        [db.sequelize.literal(`(
+                            SELECT COUNT(*) 
+                            FROM Bookings AS b 
+                            WHERE b.doctorId = User.id 
+                            AND b.statusId IN ('S2', 'S4')
+                        )`), 'bookingCount']
+                    ]
                 },
                 include: [
                     { model: db.Datacode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
                     { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
-                    { 
-                        model: db.Doctor_Infor, 
-                         as: 'doctorInfor',
-                        attributes: ['specialtyId'], 
+                    {
+                        model: db.Doctor_Infor,
+                        as: 'doctorInfor',
+                        attributes: ['specialtyId'],
                         include: [
                             {
-                                model: db.Specialty, 
+                                model: db.Specialty,
                                 as: 'specialty',
-                                attributes: ['name'] // Lấy tên chuyên khoa
+                                attributes: ['name']
                             }
-                        ] 
+                        ]
                     }
                 ],
-                
-                raw: true,
+                group: ['User.id'],
+                order: [[db.sequelize.literal('bookingCount'), 'DESC']],
+                limit: limit,
+                raw: true, // Quan trọng: để literal hoạt động đúng
                 nest: true
-            })
+            });
+
             resolve({
                 errCode: 0,
                 data: users
-            })
+            });
         } catch (e) {
+            console.log(e);
             reject(e);
         }
-    })
-}
+    });
+};
 
 let getAllDoctors = () => {
   return new Promise(async (resolve, reject) => {
@@ -106,6 +117,34 @@ let getAllDoctorConfig = () => {
   });
 };
 
+let getAllLeaderHospital = () => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let leaderHospitals = await db.User.findAll({
+        where: { roleId: "R4", status: "A1", hospitalId: null },
+        attributes: {
+          exclude: ["password"],
+        },
+      });
+
+      if (leaderHospitals && leaderHospitals.length > 0) {
+        leaderHospitals = leaderHospitals.map((leader) => {
+          if (leader.avatar) {
+            leader.avatar = Buffer.from(leader.avatar, "base64").toString("binary");
+          }
+          return leader;
+        });
+      }
+
+      resolve({
+        errCode: 0,
+        data: leaderHospitals,
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 
 let checkRequiredFields = (inputData) => {
     let arrFields = ['doctorId', 'action', 'hospitalId', 'specialtyId']
@@ -997,5 +1036,6 @@ module.exports = {
     getMedicalRecordsByPatient: getMedicalRecordsByPatient,
     handleDeleteMedicalRecord: handleDeleteMedicalRecord,
     getListBookingApproval: getListBookingApproval,
-    getListMedicalRecord: getListMedicalRecord
+    getListMedicalRecord: getListMedicalRecord,
+    getAllLeaderHospital: getAllLeaderHospital
 }

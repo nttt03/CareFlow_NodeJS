@@ -361,8 +361,13 @@ const getSpecialtiesByHospital = async (hospitalId) => {
 const getDoctorsByHospital = async (hospitalId) => {
   try {
     let doctors = await db.User.findAll({
-      where: { hospitalId: hospitalId, roleId: "R2" },
-      attributes: ["id", "fullName", "email", "phoneNumber", "avatar", "positionId"],
+      where: {
+        hospitalId: hospitalId,
+        roleId: {
+          [Op.in]: ["R2", "R4"]
+        }
+      },
+      attributes: ["id", "fullName", "email", "phoneNumber", "avatar", "positionId", 'roleId'],
       include: [
         {
           model: db.Doctor_Infor,
@@ -463,6 +468,41 @@ let savePriceForHospitalService = async ({ hospitalId, specialtyId, price }) => 
   }
 };
 
+let saveLeaderForHospitalService = async (hospitalId, leaderId) => {
+  const transaction = await db.sequelize.transaction();
+  try {
+    if (!hospitalId || !leaderId) {
+      return { errCode: 1, message: "Thiếu dữ liệu hoặc dữ liệu không hợp lệ" };
+    }
+    const leader = await db.User.findOne({
+      where: { id: leaderId, roleId: "R4" },
+      transaction,
+    });
+
+    if (!leader) {
+      await transaction.rollback();
+      return { errCode: 3, message: "Lãnh đạo không tồn tại hoặc không đúng vai trò" };
+    }
+
+    await db.User.update(
+      { hospitalId: null },
+      { where: { hospitalId, roleId: "R4" }, transaction }
+    );
+
+    await db.User.update(
+      { hospitalId: hospitalId },
+      { where: { id: leaderId }, transaction }
+    );
+
+    await transaction.commit();
+    return { errCode: 0, message: "Cập nhật lãnh đạo thành công" };
+  } catch (error) {
+    await transaction.rollback();
+    console.error("Error saveLeaderForHospitalService:", error);
+    return { errCode: 2, message: "Lỗi khi lưu lãnh đạo" };
+  }
+};
+
 module.exports = {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
@@ -474,5 +514,6 @@ module.exports = {
     getSpecialtiesByHospital: getSpecialtiesByHospital,
     getDoctorsByHospital: getDoctorsByHospital,
     saveDoctorsForHospitalService: saveDoctorsForHospitalService,
-    savePriceForHospitalService: savePriceForHospitalService
+    savePriceForHospitalService: savePriceForHospitalService,
+    saveLeaderForHospitalService: saveLeaderForHospitalService
 }
