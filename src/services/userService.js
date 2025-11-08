@@ -268,9 +268,38 @@ let getAllUsers = (userId) => {
   });
 };
 
+let validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+let validatePhoneNumber = (phone) => {
+  const regex = /^(0|\+84)(\d{9})$/;
+  return regex.test(phone);
+};
+
 let createNewUser = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
+
+      // Validate email format
+      if (!validateEmail(data.email)) {
+        resolve({
+          errCode: 3,
+          errMessage: "Email không hợp lệ!",
+        });
+        return;
+      }
+
+      // Validate phone format
+      if (!validatePhoneNumber(data.phoneNumber)) {
+        resolve({
+          errCode: 4,
+          errMessage: "Số điện thoại không hợp lệ!",
+        });
+        return;
+      }
+
       let checkEmail = await checkUserEmail(data.email);
       if (checkEmail === true) {
         resolve({
@@ -344,6 +373,24 @@ let updateUserData = (data) => {
           errCode: 2,
           errMessage: "Missing required id parameter",
         });
+      }
+
+      // Validate email format
+      if (!validateEmail(data.email)) {
+        resolve({
+          errCode: 3,
+          errMessage: "Email không hợp lệ!",
+        });
+        return;
+      }
+
+      // Validate phone format
+      if (!validatePhoneNumber(data.phoneNumber)) {
+        resolve({
+          errCode: 4,
+          errMessage: "Số điện thoại không hợp lệ!",
+        });
+        return;
       }
 
       let user = await db.User.findOne({
