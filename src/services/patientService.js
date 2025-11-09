@@ -88,6 +88,20 @@ let postBookApointment = (data) => {
               url: "/doctor/waiting-approval",
             });
             
+            // Gửi thông báo cho từng admin
+            let adminList = await db.User.findAll({
+              where: { roleId: "R1" },
+              attributes: ["id", "fullName"]
+            });
+            for (let admin of adminList) {
+              await notificationService.createNotification({
+                senderId: user[0].id,
+                receiverId: admin.id,
+                receiverRole: "R1",
+                message: `Có lịch hẹn mới từ ${data.fullName} với bác sĩ ${data.doctorName}`,
+                url: "/system/waiting-approval"
+              });
+            }
             
           }
         }

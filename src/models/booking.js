@@ -50,6 +50,11 @@ module.exports = (sequelize, DataTypes) => {
       date: DataTypes.STRING,
       timeType: DataTypes.STRING,
       token: DataTypes.STRING,
+      rejectReason: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: null
+      }
     },
     {
       sequelize,

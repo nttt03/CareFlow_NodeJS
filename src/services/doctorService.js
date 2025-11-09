@@ -675,12 +675,19 @@ let getListMedicalRecord = (date, status) => {
 let updateBookingStatus = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      let { bookingId, status } = data;
+      let { bookingId, status, rejectReason } = data;
 
       if (!bookingId || !status) {
         return resolve({
           errCode: 1,
-          errMessage: "Missing required parameters",
+          errMessage: "Missing required parameters: bookingId or status",
+        });
+      }
+
+      if (status === "S5" && (!rejectReason || !rejectReason.trim())) {
+        return resolve({
+          errCode: 1,
+          errMessage: "Lý do hủy là bắt buộc khi hủy lịch hẹn",
         });
       }
 
@@ -708,8 +715,11 @@ let updateBookingStatus = (data) => {
         });
       }
 
-      // Cập nhật trạng thái
       booking.statusId = status;
+      if (status === "S5" && rejectReason) {
+        booking.rejectReason = rejectReason.trim();
+      }
+
       await booking.save();
 
       if (booking.patientData && booking.patientData.id) {
@@ -721,7 +731,7 @@ let updateBookingStatus = (data) => {
             message = `Lịch hẹn của bạn với bác sĩ ${booking.infoDataDoctor.fullName} đã được xác nhận.`;
             break;
           case "S3":
-            message = `Lịch hẹn với bác sĩ ${booking.infoDataDoctor.fullName} đang kháms.`;
+            message = `Lịch hẹn với bác sĩ ${booking.infoDataDoctor.fullName} đang được khám.`;
             break;
           case "S4":
             message = `Lịch hẹn của bạn với bác sĩ ${booking.infoDataDoctor.fullName} đã hoàn thành.`;
@@ -745,7 +755,8 @@ let updateBookingStatus = (data) => {
 
       return resolve({
         errCode: 0,
-        errMessage: "Update booking status successfully",
+        errMessage: "Cập nhật trạng thái lịch hẹn thành công",
+        data: booking,
       });
     } catch (e) {
       reject(e);
