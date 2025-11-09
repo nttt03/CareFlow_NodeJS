@@ -18,6 +18,7 @@ let createNotification = async (data) => {
       message: data.message,
       url: data.url,
       isRead: false,
+      idBooking: data.idBooking
     });
 
     try {

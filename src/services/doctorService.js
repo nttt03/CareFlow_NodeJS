@@ -724,7 +724,7 @@ let updateBookingStatus = (data) => {
 
       if (booking.patientData && booking.patientData.id) {
         let message = "";
-        let url = "/new-appointment";
+        let url = `/view-appointment/${bookingId}`;
 
         switch (status) {
           case "S2":
@@ -750,6 +750,7 @@ let updateBookingStatus = (data) => {
           receiverRole: "R3",
           message: message,
           url: url,
+          idBooking: bookingId
         });
       }
 

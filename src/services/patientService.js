@@ -171,9 +171,9 @@ let getNewAppointment = (inputId) => {
         let appointments = await db.Booking.findAll({
           where: {
             patientId: inputId,
-            statusId: { [db.Sequelize.Op.in]: ["S1", "S2"] }, // Lọc statusId là 'S1' hoặc 'S2'
+            statusId: { [db.Sequelize.Op.in]: ["S1", "S2", "S5"] }, // Lọc statusId là 'S1' hoặc 'S2'
           },
-          attributes: ["statusId", "patientId", "date", "timeType"],
+          attributes: ["statusId", "patientId", "date", "timeType", "rejectReason"],
           include: [
             {
               model: db.Doctor_Infor,
@@ -229,6 +229,78 @@ let getNewAppointment = (inputId) => {
     }
   });
 };
+
+let getAppointmentForNoti = (bookingId) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!bookingId) {
+        resolve({
+          errCode: 1,
+          errMessage: "Missing required parameters bookingId",
+        });
+      } else {
+        let appointments = await db.Booking.findOne({
+          where: {
+            id: bookingId,
+          },
+          attributes: {
+            exclude: ["token"],
+          },
+          include: [
+            {
+              model: db.Doctor_Infor,
+              as: "doctorInfoData",
+              attributes: ["doctorId", "hospitalId", "specialtyId"],
+              include: [
+                {
+                  model: db.Hospital,
+                  as: "hospital",
+                  attributes: ["name", "addressDetail", "provinceId"],
+                  include: [
+                    {
+                      model: db.Province,
+                      as: "provinceData",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              model: db.User,
+              as: "infoDataDoctor",
+              attributes: ["fullName"],
+              include: [
+                {
+                  model: db.Datacode,
+                  as: "positionData",
+                  attributes: ["valueEn", "valueVi"],
+                },
+              ],
+            },
+            {
+              model: db.Datacode,
+              as: "timeTypeDataPatient",
+              attributes: ["valueEn", "valueVi"],
+            },
+            {
+              model: db.Datacode,
+              as: "statusData",
+              attributes: ["valueEn", "valueVi"],
+            },
+          ],
+          raw: true,
+          nest: true,
+        });
+        resolve({
+          errCode: 0,
+          dataAppointments: appointments,
+        });
+      }
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
 
 let getDoneAppointment = (inputId) => {
   return new Promise(async (resolve, reject) => {
@@ -588,4 +660,5 @@ module.exports = {
   updateInfoByUser: updateInfoByUser,
   toggleFavoriteService: toggleFavoriteService,
   getUserFavorites: getUserFavorites,
+  getAppointmentForNoti: getAppointmentForNoti
 };

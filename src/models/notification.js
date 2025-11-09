@@ -27,6 +27,11 @@ module.exports = (sequelize, DataTypes) => {
       message: DataTypes.STRING,
       url: DataTypes.STRING,
       isRead: DataTypes.BOOLEAN,
+      idBooking: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null
+      },
     },
     {
       sequelize,

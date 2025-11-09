@@ -39,6 +39,19 @@ let getNewAppointment = async (req, res) => {
     }
 }
 
+let getAppointmentForNoti = async (req, res) => {
+    try {
+        let data = await patientService.getAppointmentForNoti(req.query.bookingId)
+        return res.status(200).json(data)
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from service...'
+        })
+    }
+}
+
 let getDoneAppointment = async (req, res) => {
     try {
         let data = await patientService.getDoneAppointment(req.query.patientId)
@@ -138,4 +151,6 @@ module.exports = {
     updateInfoByUser: updateInfoByUser,
     toggleFavorite: toggleFavorite,
     getUserFavorites: getUserFavorites,
+    getAppointmentForNoti: getAppointmentForNoti,
+    
 }
