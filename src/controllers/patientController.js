@@ -142,6 +142,31 @@ export const getUserFavorites = async (req, res) => {
   }
 };
 
+let searchAll = async (req, res) => {
+    try {
+      const { keyword, provinceId, specialtyId, hospitalId } = req.query;
+
+      const data = await patientService.searchAll({
+        keyword,
+        provinceId,
+        specialtyId,
+        hospitalId,
+      });
+
+      return res.status(200).json({
+        errCode: 0,
+        message: "OK",
+        data,
+      });
+    } catch (e) {
+      console.log(e);
+      return res.status(500).json({
+        errCode: -1,
+        message: "Error from server",
+      });
+    }
+  }
+
 module.exports = {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
@@ -152,5 +177,5 @@ module.exports = {
     toggleFavorite: toggleFavorite,
     getUserFavorites: getUserFavorites,
     getAppointmentForNoti: getAppointmentForNoti,
-    
+    searchAll: searchAll
 }

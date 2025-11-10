@@ -4,6 +4,7 @@ import emailService from "../services/emailService";
 import notificationService from "../services/notificationService";
 import { v4 as uuidv4 } from "uuid";
 require("dotenv").config();
+const { Op, Sequelize } = require("sequelize");
 
 let buildUrlEmail = (doctorId, token) => {
   let result = `${process.env.URL_REACT}/verify-booking?token=${token}&doctorId=${doctorId}`;
@@ -650,6 +651,72 @@ export const getUserFavorites = async (userId) => {
   }
 };
 
+let searchAll = async ({ keyword, provinceId, specialtyId, hospitalId }) => {
+    const searchCondition = keyword
+      ? { [Op.like]: `%${keyword}%` }
+      : {};
+
+    const locationFilter = {
+      ...(provinceId && { provinceId }),
+    };
+
+    const doctors = await db.User.findAll({
+      where: {
+        roleId: "R2",
+        ...locationFilter,
+        ...(keyword && {
+          fullName: searchCondition,
+        }),
+      },
+      include: [
+        {
+          model: db.Doctor_Infor,
+          as: "doctorInfor",
+          where: {
+            ...(specialtyId && { specialtyId }),
+            ...(hospitalId && { hospitalId }),
+          },
+          include: [
+            { model: db.Specialty, as: "specialty" },
+            { model: db.Hospital, as: "hospital" },
+          ],
+          raw: true,
+          nest: true,
+        },
+        { model: db.Province, as: "provinceData" },
+      ],
+      raw: true,
+      nest: true,
+
+    });
+
+    const hospitals = await db.Hospital.findAll({
+      where: {
+        ...locationFilter,
+        ...(keyword && { name: searchCondition }),
+        ...(hospitalId && { id: hospitalId }),
+      },
+      include: [
+        { model: db.Province, as: "provinceData" },
+      ],
+      raw: true,
+      nest: true,
+    });
+
+    const specialties = await db.Specialty.findAll({
+      where: {
+        ...(keyword && { name: searchCondition }),
+        ...(specialtyId && { id: specialtyId }),
+      },
+    });
+
+    return {
+      doctors,
+      hospitals,
+      specialties,
+    };
+  }
+
 module.exports = {
   postBookApointment: postBookApointment,
   postVerifyBookApointment: postVerifyBookApointment,
@@ -660,5 +727,6 @@ module.exports = {
   updateInfoByUser: updateInfoByUser,
   toggleFavoriteService: toggleFavoriteService,
   getUserFavorites: getUserFavorites,
-  getAppointmentForNoti: getAppointmentForNoti
+  getAppointmentForNoti: getAppointmentForNoti,
+  searchAll: searchAll
 };
