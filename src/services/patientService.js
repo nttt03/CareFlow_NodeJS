@@ -374,6 +374,96 @@ let getDoneAppointment = (inputId) => {
   });
 };
 
+let getAppointmentNeedReview = (inputId) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!inputId) {
+        return resolve({
+          errCode: 1,
+          errMessage: "Missing required parameters patientId",
+        });
+      }
+
+      const now = Date.now();
+      const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
+      const minDate = sevenDaysAgoMs;
+
+      // Lấy danh sách bookingId đã được đánh giá
+      const reviewedBookingIds = await db.Review.findAll({
+        attributes: ['bookingId'],
+        raw: true
+      }).then(reviews => reviews.map(r => r.bookingId));
+
+      let appointments = await db.Booking.findAll({
+        where: {
+          patientId: inputId,
+          statusId: "S4",
+          date: {
+            [db.Sequelize.Op.gte]: minDate,
+          },
+          id: {
+            [db.Sequelize.Op.notIn]: reviewedBookingIds.length > 0 ? reviewedBookingIds : [0]
+          }
+        },
+        attributes: ["id", "statusId", "patientId", "date", "timeType"],
+        include: [
+          {
+            model: db.Doctor_Infor,
+            as: "doctorInfoData",
+            attributes: ["doctorId", "hospitalId", "specialtyId"],
+            include: [
+              {
+                model: db.Hospital,
+                as: "hospital",
+                attributes: ["name", "addressDetail", "provinceId"],
+                include: [
+                  {
+                    model: db.Province,
+                    as: "provinceData",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            model: db.User,
+            as: "infoDataDoctor",
+            attributes: ["fullName"],
+            include: [
+              {
+                model: db.Datacode,
+                as: "positionData",
+                attributes: ["valueVi", "valueEn"],
+              },
+            ],
+          },
+          {
+            model: db.Datacode,
+            as: "timeTypeDataPatient",
+            attributes: ["valueVi"],
+          },
+          {
+            model: db.Datacode,
+            as: "statusData",
+            attributes: ["valueVi"],
+          },
+        ],
+        order: [["date", "DESC"]],
+        raw: true,
+        nest: true,
+      });
+
+      resolve({
+        errCode: 0,
+        dataAppointments: appointments,
+      });
+    } catch (e) {
+      console.error("getAppointmentNeedReview Error:", e);
+      reject(e);
+    }
+  });
+};
+
 // sendAppointmentReminder
 let sendAppointmentReminder = () => {
   return new Promise(async (resolve, reject) => {
@@ -715,7 +805,139 @@ let searchAll = async ({ keyword, provinceId, specialtyId, hospitalId }) => {
       hospitals,
       specialties,
     };
+}
+
+let handleCreateReview = async (userId, data) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { bookingId, rating, comment, isAnonymous } = data;
+
+      if (!bookingId || !rating) {
+        return resolve({
+          errCode: 1,
+          errMessage: 'Thiếu thông tin bắt buộc!',
+          DT: ''
+        });
+      }
+
+      if (rating < 0 || rating > 5) {
+        return resolve({
+          errCode: 1,
+          errMessage: 'Điểm đánh giá phải từ 0 đến 5!',
+          DT: ''
+        });
+      }
+
+      // 1. Kiểm tra user tồn tại
+      let user = await db.User.findOne({
+        where: { id: userId },
+        raw: false
+      });
+      if (!user) {
+        return resolve({
+          errCode: 2,
+          errMessage: 'Người dùng không tồn tại!',
+          DT: ''
+        });
+      }
+
+      // 2. Kiểm tra booking hợp lệ
+      let booking = await db.Booking.findOne({
+        where: {
+          id: bookingId,
+          patientId: userId,
+          statusId: 'S4'
+        },
+        raw: false,
+        include: [
+          { model: db.Doctor_Infor, as: 'doctorInfoData' }
+        ]
+      });
+
+      if (!booking) {
+        return resolve({
+          errCode: 3,
+          errMessage: 'Lịch khám không tồn tại hoặc chưa hoàn thành!',
+          DT: ''
+        });
+      }
+
+      // 3. Kiểm tra thời hạn 7 ngày
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const bookingDate = new Date(parseInt(booking.date));
+      if (bookingDate < sevenDaysAgo) {
+        return resolve({
+          errCode: 4,
+          errMessage: 'Đã quá hạn đánh giá (7 ngày)!',
+          DT: ''
+        });
+      }
+
+      // 4. Kiểm tra đã đánh giá chưa
+      let existingReview = await db.Review.findOne({
+        where: { bookingId },
+        raw: false
+      });
+      if (existingReview) {
+        return resolve({
+          errCode: 5,
+          errMessage: 'Bạn đã đánh giá lịch này rồi!',
+          DT: ''
+        });
+      }
+
+      // 5. Tạo đánh giá
+      let status = rating >= 3.0 ? 'approved' : 'pending';
+
+      let review = await db.Review.create({
+        patientId: userId,
+        doctorId: booking.doctorId,
+        bookingId,
+        rating: parseFloat(rating).toFixed(2),
+        comment: comment?.trim() || null,
+        isAnonymous: !!isAnonymous,
+        status
+      });
+
+      // 6. Cập nhật rating bác sĩ
+      await updateDoctorRating(booking.doctorId);
+
+      resolve({
+        errCode: 0,
+        errMessage: 'Đánh giá thành công!',
+        DT: review.get({ plain: true })
+      });
+
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+// Cập nhật rating trung bình + count
+let updateDoctorRating = async (doctorId) => {
+  try {
+    let result = await db.Review.findOne({
+      attributes: [
+        [db.sequelize.fn('AVG', db.sequelize.col('rating')), 'avgRating'],
+        [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total']
+      ],
+      where: { doctorId, status: 'approved' },
+      raw: true
+    });
+
+    let avgRating = result.avgRating ? parseFloat(result.avgRating).toFixed(2) : null;
+    let count = parseInt(result.total) || 0;
+
+    await db.Doctor_Infor.update(
+      { rating: avgRating, count },
+      { where: { doctorId } }
+    );
+  } catch (e) {
+    console.error('Update Doctor Rating Error:', e);
   }
+};
 
 module.exports = {
   postBookApointment: postBookApointment,
@@ -728,5 +950,7 @@ module.exports = {
   toggleFavoriteService: toggleFavoriteService,
   getUserFavorites: getUserFavorites,
   getAppointmentForNoti: getAppointmentForNoti,
-  searchAll: searchAll
+  searchAll: searchAll,
+  getAppointmentNeedReview: getAppointmentNeedReview,
+  handleCreateReview: handleCreateReview
 };

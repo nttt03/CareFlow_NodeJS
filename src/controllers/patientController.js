@@ -65,6 +65,19 @@ let getDoneAppointment = async (req, res) => {
     }
 }
 
+let getAppointmentNeedReview = async (req, res) => {
+    try {
+        let data = await patientService.getAppointmentNeedReview(req.query.patientId)
+        return res.status(200).json(data)
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from service...'
+        })
+    }
+}
+
 let getInfoUserById = async (req, res) => {
     try {
         // Nếu có query param thì dùng, không thì lấy từ JWT
@@ -167,6 +180,30 @@ let searchAll = async (req, res) => {
     }
   }
 
+let handleCreateReview = async (req, res) => {
+  try {
+    let userId = req.user.id; // từ JWT
+    let data = req.body;
+    console.log("userId", userId);
+    console.log("data", data);
+    let response = await patientService.handleCreateReview(userId, data);
+
+    return res.status(200).json({
+      errMessage: response.errMessage,
+      errCode: response.errCode,
+      DT: response.DT || ''
+    });
+
+  } catch (e) {
+    console.error(e);
+    return res.status(200).json({
+      errMessage: 'Lỗi từ server!',
+      errCode: '-1',
+      DT: ''
+    });
+  }
+};
+
 module.exports = {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
@@ -177,5 +214,7 @@ module.exports = {
     toggleFavorite: toggleFavorite,
     getUserFavorites: getUserFavorites,
     getAppointmentForNoti: getAppointmentForNoti,
-    searchAll: searchAll
+    searchAll: searchAll,
+    getAppointmentNeedReview: getAppointmentNeedReview,
+    handleCreateReview: handleCreateReview
 }

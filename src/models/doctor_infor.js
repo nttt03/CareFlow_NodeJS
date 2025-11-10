@@ -36,7 +36,15 @@ module.exports = (sequelize, DataTypes) => {
     price: DataTypes.DECIMAL(10, 2),
     note: DataTypes.STRING,
     count: DataTypes.INTEGER,
-    rating: DataTypes.STRING,
+    rating: {
+      type: DataTypes.DECIMAL(3, 2),
+      allowNull: true,
+      defaultValue: null,
+      validate: {
+        min: 0,
+        max: 5
+      }
+    },
   }, {
     sequelize,
     modelName: "Doctor_Infor",

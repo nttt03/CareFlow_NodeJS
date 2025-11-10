@@ -78,6 +78,7 @@ let initWebRoutes = (app) => {
     router.get("/api/get-new-appointment", patientController.getNewAppointment);
     router.get("/api/get-appointment-for-noti", patientController.getAppointmentForNoti);
     router.get("/api/get-done-appointment", patientController.getDoneAppointment);
+    router.get("/api/get-appointment-need-review", patientController.getAppointmentNeedReview);
     router.post("/api/patient-book-appointment", patientController.postBookApointment);
     router.post("/api/verify-book-appointment", patientController.postVerifyBookApointment);
     router.get("/api/get-info-user-by-id", checkUserJWT, patientController.getInfoUserById);
@@ -85,10 +86,13 @@ let initWebRoutes = (app) => {
     router.post("/api/toggle-favorite", patientController.toggleFavorite);
     router.get("/api/get-favorites", patientController.getUserFavorites);
     router.get("/api/search", patientController.searchAll);
+    router.post("/api/review-doctor", checkUserJWT, patientController.handleCreateReview);
 
     router.get("/api/doctor/:doctorId/statistics", StatisticController.getDoctorStatistics);
     router.get("/api/hospital/:hospitalId/statistics", StatisticController.getHospitalStatistics);
     router.get("/api/admin/statistics", StatisticController.getAdminStatistics);
+
+    router.post("/api/chat-with-db", chatbotController.chatWithDatabase);
 
     // Tạo thông báo
     router.post("/api/notification", notificationController.createNotification);
@@ -99,9 +103,6 @@ let initWebRoutes = (app) => {
     );
     // Đánh dấu đã đọc
     router.put("/api/notification/read", notificationController.markAsRead);
-
-
-    router.post('/api/chat', chatbotController.handleChat);
     
     // router.get('/hello', (rep, res) => {
     //     return res.send("Hế lô world ^_^ !")
