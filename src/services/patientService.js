@@ -323,6 +323,29 @@ let postBookApointment = (data) => {
         console.warn("Thông báo admin thất bại:", adminError);
       }
 
+      // 9. Gửi thông báo cho leader hospital
+      try {
+        let leader = await db.User.findOne({
+          where: { roleId: "R4", hospitalId: data.hospitalId }
+        });
+
+        if (!leader || !leader.hospitalId) {
+          return resolve({
+            errCode: 2,
+            errMessage: 'Leader not found or not assigned to any hospital'
+          });
+        }
+        await notificationService.createNotification({
+          senderId: user.id,
+          receiverId: leader.id,
+          receiverRole: "R4",
+          message: `Có lịch hẹn mới từ ${data.fullName} với bác sĩ ${data.doctorName}`,
+          url: "/leader-hospital/waiting-approval",
+        });
+      } catch (notifError) {
+        console.warn("Thông báo lãnh đạo bệnh viện thất bại:", notifError);
+      }
+
       // 10. Thành công → commit
       await t.commit();
 

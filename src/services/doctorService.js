@@ -583,6 +583,82 @@ let getListPatientForDoctor = (doctorId, date, status) => {
         }
     })
 }
+
+let getListBookingApprovalForLeader = (leaderId, date, status) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!leaderId) {
+                return resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parameter leaderId'
+                });
+            }
+
+            // Lấy thông tin leader để biết hospitalId
+            let leader = await db.User.findOne({
+                where: { id: leaderId },
+                attributes: ['hospitalId']
+            });
+
+            if (!leader || !leader.hospitalId) {
+                return resolve({
+                    errCode: 2,
+                    errMessage: 'Leader not found or not assigned to any hospital'
+                });
+            }
+
+            // Điều kiện lọc
+            let whereCondition = {
+                hospitalId: leader.hospitalId,
+                statusId: status || 'S1'  // Mặc định lấy lịch chờ duyệt
+            };
+
+            if (date) whereCondition.date = date;
+
+            let data = await db.Booking.findAll({
+                where: whereCondition,
+                include: [
+                    {
+                        model: db.User,
+                        as: 'patientData',
+                        attributes: {
+                            exclude: ['password', 'positionId', 'hospitalId', 'avatar', 'resetPasswordExpires', 'resetPasswordToken']
+                        },
+                        include: [
+                            { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+                            { model: db.Province, as: 'provinceData', attributes: ['code', 'name'] },
+                            { model: db.Patient_Profile, as: 'patientProfile' },
+                            { model: db.Medical_Record, as: 'medicalRecords' },
+                        ],
+                    },
+                    {
+                        model: db.User,
+                        as: 'infoDataDoctor',
+                        attributes: {
+                            exclude: ['password', 'avatar', 'resetPasswordExpires', 'resetPasswordToken']
+                        },
+                    },
+                    {
+                        model: db.Datacode,
+                        as: 'timeTypeDataPatient',
+                        attributes: ['valueEn', 'valueVi'],
+                    }
+                ],
+                raw: false,
+                nest: true
+            });
+
+            return resolve({
+                errCode: 0,
+                data
+            });
+
+        } catch (e) {
+            return reject(e);
+        }
+    });
+};
+
 let getListBookingApproval = (date, status) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -1084,5 +1160,6 @@ module.exports = {
     handleDeleteMedicalRecord: handleDeleteMedicalRecord,
     getListBookingApproval: getListBookingApproval,
     getListMedicalRecord: getListMedicalRecord,
-    getAllLeaderHospital: getAllLeaderHospital
+    getAllLeaderHospital: getAllLeaderHospital,
+    getListBookingApprovalForLeader: getListBookingApprovalForLeader
 }

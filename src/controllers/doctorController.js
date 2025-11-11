@@ -145,6 +145,19 @@ let getListPatientForDoctor = async (req, res) => {
     }
 }
 
+let getListBookingApprovalForLeader = async (req, res) => {
+    try {
+        let infor = await doctorService.getListBookingApprovalForLeader(req.query.leaderId, req.query.date, req.query.status);
+        return res.status(200).json(infor);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from server...'
+        })
+    }
+}
+
 let getListBookingApproval = async (req, res) => {
     try {
         let infor = await doctorService.getListBookingApproval(req.query.date, req.query.status);
@@ -262,5 +275,6 @@ module.exports = {
     handleDeleteMedicalRecord: handleDeleteMedicalRecord,
     getListBookingApproval: getListBookingApproval,
     getListMedicalRecord: getListMedicalRecord,
-    getAllLeaderHospital: getAllLeaderHospital
+    getAllLeaderHospital: getAllLeaderHospital,
+    getListBookingApprovalForLeader: getListBookingApprovalForLeader
 }
