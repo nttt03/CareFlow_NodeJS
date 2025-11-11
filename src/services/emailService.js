@@ -58,31 +58,91 @@ let getBodyHTMLEmail = (dataSend) => {
   return result;
 };
 
-let sendAttachment = async (dataSend) => {
-  let transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // true for port 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_APP,
-      pass: process.env.EMAIL_APP_PASSWORD,
-    },
-  });
-  // console.log("Base64 Image Data: ", dataSend.imgBase64.substring(0, 100)); // Log 100 ký tự đầu
+// let sendAttachment = async (dataSend) => {
+//   let transporter = nodemailer.createTransport({
+//     host: "smtp.gmail.com",
+//     port: 587,
+//     secure: false, // true for port 465, false for other ports
+//     auth: {
+//       user: process.env.EMAIL_APP,
+//       pass: process.env.EMAIL_APP_PASSWORD,
+//     },
+//   });
+//   // console.log("Base64 Image Data: ", dataSend.imgBase64.substring(0, 100)); // Log 100 ký tự đầu
 
-  let info = await transporter.sendMail({
-    from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>', // sender address
-    to: dataSend.email, // list of receivers
-    subject: "Kết quả đặt lịch khám bệnh", // Subject line
-    html: getBodyHTMLEmailRemeDy(dataSend), // html body
-    attachments: [
-      {
-        filename: `remedy-${dataSend.patientId}-${new Date().getTime()}.png`,
-        content: dataSend.imgBase64.split("base64,")[1],
-        encoding: "base64",
+//   let info = await transporter.sendMail({
+//     from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>', // sender address
+//     to: dataSend.email, // list of receivers
+//     subject: "Kết quả đặt lịch khám bệnh", // Subject line
+//     html: getBodyHTMLEmailRemeDy(dataSend), // html body
+//     attachments: [
+//       {
+//         filename: `remedy-${dataSend.patientId}-${new Date().getTime()}.png`,
+//         content: dataSend.imgBase64.split("base64,")[1],
+//         encoding: "base64",
+//       },
+//     ],
+//   });
+// };
+
+let sendAttachment = async (dataSend) => {
+  try {
+    // 1. Kiểm tra dữ liệu đầu vào
+    if (!dataSend.email || !dataSend.imgBase64) {
+      throw new Error("Missing email or file data");
+    }
+
+    // 2. Tạo transporter (chỉ tạo 1 lần ngoài hàm nếu có thể)
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_APP,
+        pass: process.env.EMAIL_APP_PASSWORD,
       },
-    ],
-  });
+    });
+
+    // 3. Xử lý base64 → buffer + lấy MIME type + extension
+    const matches = dataSend.imgBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error("Invalid base64 format");
+    }
+
+    const mimeType = matches[1]; // image/png, application/pdf
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, "base64");
+
+    // 4. Xác định tên file + extension
+    let extension = "png";
+    if (mimeType === "application/pdf") extension = "pdf";
+    else if (mimeType === "image/jpeg") extension = "jpg";
+    else if (mimeType === "image/jpg") extension = "jpg";
+
+    const filename = `don-thuoc-${dataSend.patientId}-${Date.now()}.${extension}`;
+
+    // 5. Gửi email
+    const info = await transporter.sendMail({
+      from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>', // sender address
+      to: dataSend.email,
+      subject: "Đơn thuốc & Kết quả khám bệnh",
+      html: getBodyHTMLEmailRemeDy(dataSend),
+      attachments: [
+        {
+          filename,
+          content: buffer,
+          encoding: "base64",
+        },
+      ],
+    });
+
+    console.log("Email sent: ", info.messageId);
+    return info;
+
+  } catch (error) {
+    console.error("Lỗi gửi email đơn thuốc:", error);
+    throw error; // Để caller xử lý
+  }
 };
 
 let getBodyHTMLEmailRemeDy = (dataSend) => {

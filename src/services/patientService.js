@@ -11,9 +11,142 @@ let buildUrlEmail = (doctorId, token) => {
   return result;
 };
 
+// let postBookApointment = (data) => {
+//   return new Promise(async (resolve, reject) => {
+//     try {
+//       if (
+//         !data.email ||
+//         !data.doctorId ||
+//         !data.date ||
+//         !data.timeType ||
+//         !data.fullName
+//       ) {
+//         return resolve({
+//           errCode: 1,
+//           errMessage: "Missing parameter...",
+//         });
+//       }
+
+//       let token = uuidv4();
+
+//       // 1. Upsert patient
+//       let [user] = await db.User.findOrCreate({
+//         where: { email: data.email },
+//         defaults: {
+//           email: data.email,
+//           roleId: "R3",
+//           gender: data.selectedGender,
+//           addressDetail: data.address,
+//           fullName: data.fullName,
+//         },
+//       });
+
+//       // 3. Đặt lịch nếu chưa có với bác sĩ đó
+//       let [booking, created] = await db.Booking.findOrCreate({
+//         where: {
+//           patientId: user.id,
+//           doctorId: data.doctorId,
+//           date: data.date,
+//           timeType: data.timeType,
+//           statusId: { [db.Sequelize.Op.ne]: "S5" },
+//         },
+//         defaults: {
+//           statusId: "S1",
+//           doctorId: data.doctorId,
+//           patientId: user.id,
+//           hospitalId: data.hospitalId,
+//           symptoms: data.symptoms,
+//           date: data.date,
+//           timeType: data.timeType,
+//           token: token,
+//         },
+//       });
+
+//       if (!created) {
+//         return resolve({
+//           errCode: 3,
+//           errMessage: "Bạn đã đặt lịch với bác sĩ này vào thời gian này rồi.",
+//         });
+//       }
+
+//       // 2. Kiểm tra conflict lịch: bệnh nhân đặt trùng giờ với bác sĩ khác
+//       let conflictBooking = await db.Booking.findOne({
+//         where: {
+//           patientId: user.id,
+//           date: data.date,
+//           timeType: data.timeType,
+//           statusId: { [db.Sequelize.Op.ne]: "S5" }, // loại lịch đã hủy
+//         },
+//       });
+
+//       if (conflictBooking) {
+//         return resolve({
+//           errCode: 2,
+//           errMessage:
+//             "Bạn đã có lịch khám trong khung giờ này. Vui lòng chọn giờ khác.",
+//         });
+//       }
+
+//       // 4. Tăng số lượng bệnh nhân trong slot
+//       await db.Schedule.increment("currentNumber", {
+//         by: 1,
+//         where: {
+//           doctorId: data.doctorId,
+//           date: data.date,
+//           timeType: data.timeType,
+//         },
+//       });
+
+//       // 5. Gửi email xác nhận
+//       await emailService.sendSimpleEmail({
+//         receiverEmail: data.email,
+//         patientName: data.fullName,
+//         time: data.timeString,
+//         doctorName: data.doctorName,
+//         language: data.language,
+//         redirectLink: buildUrlEmail(data.doctorId, token),
+//       });
+
+//       // 6. Notification cho bác sĩ
+//       await notificationService.createNotification({
+//         senderId: user.id,
+//         receiverId: data.doctorId,
+//         receiverRole: "R2",
+//         message: `Bạn có lịch hẹn mới từ ${data.fullName}`,
+//         url: "/doctor/waiting-approval",
+//       });
+
+//       // 7. Notification cho admin
+//       let adminList = await db.User.findAll({
+//         where: { roleId: "R1" },
+//         attributes: ["id", "fullName"],
+//       });
+//       for (let admin of adminList) {
+//         await notificationService.createNotification({
+//           senderId: user.id,
+//           receiverId: admin.id,
+//           receiverRole: "R1",
+//           message: `Có lịch hẹn mới từ ${data.fullName} với bác sĩ ${data.doctorName}`,
+//           url: "/system/waiting-approval",
+//         });
+//       }
+
+//       return resolve({
+//         errCode: 0,
+//         errMessage: "Đặt lịch thành công",
+//       });
+
+//     } catch (e) {
+//       reject(e);
+//     }
+//   });
+// };
+
 let postBookApointment = (data) => {
   return new Promise(async (resolve, reject) => {
+    const t = await db.sequelize.transaction(); // Bắt đầu transaction
     try {
+      // 1. Kiểm tra tham số bắt buộc
       if (
         !data.email ||
         !data.doctorId ||
@@ -21,98 +154,189 @@ let postBookApointment = (data) => {
         !data.timeType ||
         !data.fullName
       ) {
-        resolve({
+        return resolve({
           errCode: 1,
           errMessage: "Missing parameter...",
         });
-      } else {
-        let token = uuidv4();
+      }
 
-        // 1. Upsert patient
-        let user = await db.User.findOrCreate({
-          where: { email: data.email },
-          defaults: {
-            email: data.email,
-            roleId: "R3",
-            gender: data.selectedGender,
-            addressDetail: data.address,
-            fullName: data.fullName,
-          },
-        });
+      const token = uuidv4();
 
-        if (user && user[0]) {
-          // 2. Tạo Booking
-          let [booking, created] = await db.Booking.findOrCreate({
-            where: {
-              patientId: user[0].id,
-              doctorId: data.doctorId,
-              date: data.date,
-              timeType: data.timeType,
-            },
-            defaults: {
-              statusId: "S1",
-              doctorId: data.doctorId,
-              patientId: user[0].id,
-              hospitalId: data.hospitalId,
-              symptoms: data.symptoms,
-              date: data.date,
-              timeType: data.timeType,
-              token: token,
-            },
+      // 2. Upsert bệnh nhân (patient)
+      const [user] = await db.User.findOrCreate({
+        where: { email: data.email },
+        defaults: {
+          email: data.email,
+          roleId: "R3",
+          gender: data.selectedGender,
+          addressDetail: data.address,
+          fullName: data.fullName,
+        },
+        transaction: t,
+      });
+
+      // 3. GỘP: Kiểm tra tất cả lịch hiện tại (trừ đã hủy S5)
+      const existingBookings = await db.Booking.findAll({
+        where: {
+          patientId: user.id,
+          date: data.date,
+          timeType: data.timeType,
+          statusId: { [db.Sequelize.Op.in]: ["S1", "S2", "S3"] },
+        },
+        attributes: ["id", "doctorId"],
+        transaction: t,
+      });
+
+      if (existingBookings.length > 0) {
+        const hasSameDoctor = existingBookings.some(
+          (b) => b.doctorId === data.doctorId
+        );
+
+        if (hasSameDoctor) {
+          await t.rollback();
+          return resolve({
+            errCode: 3,
+            errMessage: "Bạn đã đặt lịch với bác sĩ này vào thời gian này rồi.",
           });
-          if (created) {
-            // 4.Tăng số lượng bệnh nhân trong slot
-            await db.Schedule.increment("currentNumber", {
-              by: 1,
-              where: {
-                doctorId: data.doctorId,
-                date: data.date,
-                timeType: data.timeType,
-              },
-            });
-
-            // 5. Gửi email
-            await emailService.sendSimpleEmail({
-              receiverEmail: data.email,
-              patientName: data.fullName,
-              time: data.timeString,
-              doctorName: data.doctorName,
-              language: data.language,
-              redirectLink: buildUrlEmail(data.doctorId, token),
-            });
-            // 6.Thông báo cho bác sĩ
-            await notificationService.createNotification({
-              senderId: user[0].id,       // người đặt
-              receiverId: data.doctorId,  // bác sĩ nhận
-              receiverRole: "R2",         // role bác sĩ
-              message: `Bạn có lịch hẹn mới từ ${data.fullName}`,
-              url: "/doctor/waiting-approval",
-            });
-            
-            // Gửi thông báo cho từng admin
-            let adminList = await db.User.findAll({
-              where: { roleId: "R1" },
-              attributes: ["id", "fullName"]
-            });
-            for (let admin of adminList) {
-              await notificationService.createNotification({
-                senderId: user[0].id,
-                receiverId: admin.id,
-                receiverRole: "R1",
-                message: `Có lịch hẹn mới từ ${data.fullName} với bác sĩ ${data.doctorName}`,
-                url: "/system/waiting-approval"
-              });
-            }
-            
-          }
+        } else {
+          await t.rollback();
+          return resolve({
+            errCode: 2,
+            errMessage:
+              "Bạn đã có lịch khám với bác sĩ khác trong khung giờ này. Vui lòng chọn giờ khác.",
+          });
         }
+      }
 
-        resolve({
-          errCode: 0,
-          errMessage: "Save booking successfully",
+      // 4. Kiểm tra slot còn trống (nếu cần)
+      const schedule = await db.Schedule.findOne({
+        where: {
+          doctorId: data.doctorId,
+          date: data.date,
+          timeType: data.timeType,
+        },
+        transaction: t,
+      });
+
+      if (!schedule) {
+        await t.rollback();
+        return resolve({
+          errCode: 4,
+          errMessage: "Khung giờ không tồn tại.",
         });
       }
+
+      if (schedule.currentNumber >= schedule.maxNumber) {
+        await t.rollback();
+        return resolve({
+          errCode: 5,
+          errMessage: "Khung giờ đã đầy. Vui lòng chọn giờ khác.",
+        });
+      }
+
+      // 5. Tạo lịch mới
+      const [booking, created] = await db.Booking.findOrCreate({
+        where: {
+          patientId: user.id,
+          doctorId: data.doctorId,
+          date: data.date,
+          timeType: data.timeType,
+          statusId: { [db.Sequelize.Op.ne]: "S5" },
+        },
+        defaults: {
+          statusId: "S1",
+          doctorId: data.doctorId,
+          patientId: user.id,
+          hospitalId: data.hospitalId,
+          symptoms: data.symptoms,
+          date: data.date,
+          timeType: data.timeType,
+          token: token,
+        },
+        transaction: t,
+      });
+
+      if (!created) {
+        await t.rollback();
+        return resolve({
+          errCode: 3,
+          errMessage: "Bạn đã đặt lịch với bác sĩ này vào thời gian này rồi.",
+        });
+      }
+
+      // 6. Tăng số lượng bệnh nhân trong slot
+      await db.Schedule.increment("currentNumber", {
+        by: 1,
+        where: {
+          doctorId: data.doctorId,
+          date: data.date,
+          timeType: data.timeType,
+        },
+        transaction: t,
+      });
+
+      // 7. Gửi email xác nhận (không rollback nếu lỗi email)
+      try {
+        await emailService.sendSimpleEmail({
+          receiverEmail: data.email,
+          patientName: data.fullName,
+          time: data.timeString,
+          doctorName: data.doctorName,
+          language: data.language,
+          redirectLink: buildUrlEmail(data.doctorId, token),
+        });
+      } catch (emailError) {
+        console.warn("Email gửi thất bại, nhưng lịch đã được tạo:", emailError);
+      }
+
+      // 8. Gửi thông báo cho bác sĩ
+      try {
+        await notificationService.createNotification({
+          senderId: user.id,
+          receiverId: data.doctorId,
+          receiverRole: "R2",
+          message: `Bạn có lịch hẹn mới từ ${data.fullName}`,
+          url: "/doctor/waiting-approval",
+        });
+      } catch (notifError) {
+        console.warn("Thông báo bác sĩ thất bại:", notifError);
+      }
+
+      // 9. Gửi thông báo cho tất cả admin
+      try {
+        const adminList = await db.User.findAll({
+          where: { roleId: "R1" },
+          attributes: ["id", "fullName"],
+          transaction: t,
+        });
+
+        for (const admin of adminList) {
+          await notificationService.createNotification({
+            senderId: user.id,
+            receiverId: admin.id,
+            receiverRole: "R1",
+            message: `Có lịch hẹn mới từ ${data.fullName} với bác sĩ ${data.doctorName}`,
+            url: "/system/waiting-approval",
+          });
+        }
+      } catch (adminError) {
+        console.warn("Thông báo admin thất bại:", adminError);
+      }
+
+      // 10. Thành công → commit
+      await t.commit();
+
+      return resolve({
+        errCode: 0,
+        errMessage: "Đặt lịch thành công",
+        data: {
+          bookingId: booking.id,
+          token: token,
+        },
+      });
     } catch (e) {
+      if (t) await t.rollback();
+      console.error("Lỗi đặt lịch:", e);
       reject(e);
     }
   });

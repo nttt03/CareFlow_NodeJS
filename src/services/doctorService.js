@@ -322,7 +322,7 @@ let bulkCreateScheduleService = (data) => {
                 let schedule = data.arrSchedule;
                 if(schedule && schedule.length > 0) {
                     schedule = schedule.map(item => {
-                        item.maxNumber = MAX_NUMBER_SCHEDULE;
+                        item.maxNumber = item.maxNumber;
                         return item;
                     })
                 }
@@ -728,6 +728,24 @@ let updateBookingStatus = (data) => {
       }
 
       await booking.save();
+
+      // Nếu huỷ lịch -> trừ currentNumber trong Schedule
+        if (status === "S5") {
+        let schedule = await db.Schedule.findOne({
+            where: {
+            doctorId: booking.doctorId,
+            date: booking.date,
+            timeType: booking.timeType,
+            },
+            raw: false
+        });
+
+        if (schedule) {
+            // Tránh currentNumber < 0
+            schedule.currentNumber = Math.max((schedule.currentNumber || 0) - 1, 0);
+            await schedule.save();
+        }
+        }
 
       if (booking.patientData && booking.patientData.id) {
         let message = "";
