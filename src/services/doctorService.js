@@ -29,7 +29,7 @@ let getTopDoctorHome = (limit) => {
                     {
                         model: db.Doctor_Infor,
                         as: 'doctorInfor',
-                        attributes: ['specialtyId'],
+                        attributes: ['specialtyId', 'rating', 'count'],
                         include: [
                             {
                                 model: db.Specialty,
@@ -546,7 +546,7 @@ let getListPatientForDoctor = (doctorId, date, status) => {
                             model: db.User,
                             as: 'patientData',
                             attributes: {
-                                exclude: ['password', 'positionId', 'hospitalId', 'avatar']
+                                exclude: ['password', 'positionId', 'hospitalId', 'avatar', 'resetPasswordExpires', 'resetPasswordToken']
                             },
                             include: [
                                 { model: db.Datacode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
@@ -554,6 +554,13 @@ let getListPatientForDoctor = (doctorId, date, status) => {
                                 { model: db.Patient_Profile, as: 'patientProfile' },
                                 { model: db.Medical_Record, as: 'medicalRecords' },
                             ],
+                        },
+                        {
+                            model: db.User,
+                            as: 'infoDataDoctor',
+                            attributes: {
+                                exclude: ['password', 'avatar', 'resetPasswordExpires', 'resetPasswordToken']
+                            },
                         },
                         {
                             model: db.Datacode,
@@ -787,8 +794,18 @@ let sendRemedy = (data) => {
                 })
 
                 if (appointment) {
+                    let url = `/view-appointment/${data.bookingId}`;
                     appointment.statusId = 'S4'
                     await appointment.save()
+                    await notificationService.createNotification({
+                        senderId: data.doctorId,
+                        receiverId: data.patientId,
+                        receiverRole: "R3",
+                        message: `Lịch hẹn của bạn với bác sĩ ${data.doctorName} đã hoàn thành.`,
+                        url: url,
+                        idBooking: data.bookingId
+                    });
+                    await notificationService.sendReviewReminders()
                 }
 
                 // send email remedy

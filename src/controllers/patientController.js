@@ -204,6 +204,20 @@ let handleCreateReview = async (req, res) => {
   }
 };
 
+let getReviews = async (req, res) => {
+  try {
+    const doctorId = req.query.doctorId || null;
+    const result = await patientService.getReviewsService(doctorId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      errCode: -1,
+      message: "Server error",
+    });
+  }
+};
+
 module.exports = {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
@@ -216,5 +230,6 @@ module.exports = {
     getAppointmentForNoti: getAppointmentForNoti,
     searchAll: searchAll,
     getAppointmentNeedReview: getAppointmentNeedReview,
-    handleCreateReview: handleCreateReview
+    handleCreateReview: handleCreateReview,
+    getReviews: getReviews
 }

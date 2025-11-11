@@ -54,6 +54,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
         defaultValue: null
+      },
+      reviewStatus: {
+        type: DataTypes.ENUM('pending', 'reviewed'),
+        allowNull: false,
+        defaultValue: 'pending',
+      },
+      reviewRemindSent: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       }
     },
     {

@@ -903,6 +903,9 @@ let handleCreateReview = async (userId, data) => {
       // 6. Cập nhật rating bác sĩ
       await updateDoctorRating(booking.doctorId);
 
+      booking.reviewStatus = 'reviewed';
+      await booking.save();
+
       resolve({
         errCode: 0,
         errMessage: 'Đánh giá thành công!',
@@ -939,6 +942,59 @@ let updateDoctorRating = async (doctorId) => {
   }
 };
 
+let getReviewsService = async (doctorId) => {
+  try {
+    let where = {};
+    if (doctorId) {
+      where.doctorId = doctorId;
+    }
+
+    const reviews = await db.Review.findAll({
+      where,
+      include: [
+        {
+          model: db.User,
+          as: "patient",
+          attributes: ["id", "fullName", "avatar"],
+        },
+        {
+              model: db.User,
+              as: "doctor",
+              attributes: ["id", "fullName", "avatar"],
+              include: [
+                {
+                  model: db.Datacode,
+                  as: "positionData",
+                  attributes: ["valueEn", "valueVi"],
+                },
+              ],
+              raw: true,
+              nest: true,
+            },
+        {
+          model: db.Booking,
+          as: "booking",
+          attributes: ["id", "date", "timeType"],
+        },
+      ],
+      raw: true,
+      nest: true,
+      order: [["createdAt", "DESC"]],
+    });
+
+    return {
+      errCode: 0,
+      data: reviews,
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      errCode: -1,
+      message: "Error from server",
+    };
+  }
+};
+
 module.exports = {
   postBookApointment: postBookApointment,
   postVerifyBookApointment: postVerifyBookApointment,
@@ -952,5 +1008,7 @@ module.exports = {
   getAppointmentForNoti: getAppointmentForNoti,
   searchAll: searchAll,
   getAppointmentNeedReview: getAppointmentNeedReview,
-  handleCreateReview: handleCreateReview
+  handleCreateReview: handleCreateReview,
+  getReviewsService: getReviewsService,
+
 };

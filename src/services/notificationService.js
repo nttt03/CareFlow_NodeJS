@@ -46,6 +46,48 @@ let createNotification = async (data) => {
   }
 };
 
+let sendReviewReminders = async () => {
+  try {
+    const pendingBookings = await db.Booking.findAll({
+      where: { reviewStatus: 'pending', reviewRemindSent: false, statusId: 'S4' },
+      include: [{ model: db.User, as: "infoDataDoctor" }], raw: false
+    });
+
+    if (!pendingBookings.length) return;
+
+    const io = getIo();
+
+    for (let booking of pendingBookings) {
+      // 1. tạo notification
+      await createNotification({
+        senderId: booking.doctorId,
+        receiverId: booking.patientId,
+        receiverRole: "R3",
+        message: `Bạn có lịch hẹn với bác sĩ ${booking.infoDataDoctor.fullName} cần đánh giá`,
+        url: `/review`,
+        idBooking: booking.id,
+      });
+
+      // 2. emit socket
+      io.to(getRoom("R3", booking.patientId)).emit("review-reminder", {
+        id: booking.id,
+        doctorId: booking.doctorId,
+        doctorName: booking.infoDataDoctor?.fullName,
+        patientId: booking.patientId,
+        date: booking.date,
+        timeType: booking.timeType,
+      });
+      // 3. đánh dấu đã gửi
+      booking.reviewRemindSent = true;
+      await booking.save();
+    }
+
+    console.log("Đã gửi review reminders cho", pendingBookings.length, "booking(s).");
+  } catch (err) {
+    console.error("sendReviewReminders error:", err);
+  }
+};
+
 let getNotificationsByUser = async (userId, roleId) => {
   try {
     let notifications = await db.Notification.findAll({
@@ -88,4 +130,5 @@ module.exports = {
   createNotification,
   getNotificationsByUser,
   markAsRead,
+  sendReviewReminders,
 };
