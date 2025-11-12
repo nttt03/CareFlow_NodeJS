@@ -257,6 +257,28 @@ let handleDeleteMedicalRecord = async (req, res) => {
     return res.status(200).json(message);
 }
 
+let getBookingsForCalendar = async (req, res) => {
+  try {
+    const { startDate, endDate, roleId, userId, hospitalId } = req.query;
+
+    const result = await doctorService.getBookingsForCalendarService(
+      startDate,
+      endDate,
+      roleId,
+      userId,
+      hospitalId
+    );
+
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error("Error in getBookingsForCalendar:", e);
+    return res.status(500).json({
+      errCode: -1,
+      errMessage: "Error from server",
+    });
+  }
+};
+
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
     getGetAllDoctor: getGetAllDoctor,
@@ -276,5 +298,6 @@ module.exports = {
     getListBookingApproval: getListBookingApproval,
     getListMedicalRecord: getListMedicalRecord,
     getAllLeaderHospital: getAllLeaderHospital,
-    getListBookingApprovalForLeader: getListBookingApprovalForLeader
+    getListBookingApprovalForLeader: getListBookingApprovalForLeader,
+    getBookingsForCalendar: getBookingsForCalendar
 }

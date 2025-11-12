@@ -55,6 +55,7 @@ let initWebRoutes = (app) => {
     router.get("/api/get-list-booking-approval", doctorController.getListBookingApproval);
     router.get("/api/get-list-booking-approval-for-leader", doctorController.getListBookingApprovalForLeader);
     router.get("/api/get-list-medical-record", doctorController.getListMedicalRecord);
+    router.get("/api/get-bookings-calendar", doctorController.getBookingsForCalendar);
 
     router.post("/api/create-new-specialty", specialtyController.createSpecialty);
     router.get("/api/get-all-specialty", specialtyController.getAllSpecialty);

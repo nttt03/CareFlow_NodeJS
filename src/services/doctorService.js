@@ -1142,6 +1142,137 @@ let handleDeleteMedicalRecord = (medicalRecordId) => {
   });
 };
 
+let getBookingsForCalendarService = async (startDate, endDate, roleId, userId, hospitalId) => {
+  try {
+    if (!startDate || !endDate) {
+      return {
+        errCode: 1,
+        errMessage: "Missing required parameters",
+      };
+    }
+
+    const startTimestamp = new Date(startDate).getTime();
+    const endTimestamp = new Date(endDate).getTime() + 24 * 60 * 60 * 1000 - 1;
+
+    const whereCondition = {
+      date: {
+        [db.Sequelize.Op.between]: [startTimestamp, endTimestamp],
+      },
+    };
+
+    if (roleId === "R2") whereCondition.doctorId = userId;
+    if (roleId === "R4") whereCondition.hospitalId = hospitalId;
+
+    const bookings = await db.Booking.findAll({
+      where: whereCondition,
+      include: [
+        {
+          model: db.User,
+          as: "infoDataDoctor",
+          attributes: ["id", "fullName", "phoneNumber", "email"],
+          include: [
+            {
+              model: db.Datacode,
+              as: "positionData",
+              attributes: ["valueEn", "valueVi"],
+            },
+          ],
+        },
+        {
+          model: db.User,
+          as: "patientData",
+          attributes: ["id", "fullName", "phoneNumber", "email"],
+        },
+        {
+          model: db.Datacode,
+          as: "timeTypeDataPatient",
+          attributes: ["valueVi", "valueEn"],
+        },
+        {
+          model: db.Datacode,
+          as: "statusData",
+          attributes: ["valueVi", "valueEn"],
+        },
+        {
+          model: db.Hospital,
+          as: "hospitalData",
+          attributes: ["id", "name"],
+        },
+      ],
+      raw: false,
+      order: [["date", "ASC"]],
+    });
+
+    // Gom nhóm thống kê theo ngày
+    const summary = {};
+
+    bookings.forEach((b) => {
+      const dateKey = new Date(Number(b.date)).toISOString().split("T")[0];
+      if (!summary[dateKey]) {
+        summary[dateKey] = {
+          total: 0,
+          confirmed: 0,
+          cancelled: 0,
+          pending: 0,
+          done: 0,
+          byDoctor: {},
+          byHospital: {},
+        };
+      }
+
+      summary[dateKey].total++;
+
+      switch (b.statusId) {
+        case "S1":
+          summary[dateKey].pending++;
+          break;
+        case "S2":
+          summary[dateKey].confirmed++;
+          break;
+        case "S4":
+          summary[dateKey].done++;
+          break;
+        case "S5":
+          summary[dateKey].cancelled++;
+          break;
+        default:
+          summary[dateKey].pending++;
+          break;
+      }
+
+      // Nếu là lãnh đạo → nhóm theo bác sĩ
+      if (b.infoDataDoctor) {
+        const doctorName = b.infoDataDoctor.fullName;
+        if (!summary[dateKey].byDoctor[doctorName]) {
+          summary[dateKey].byDoctor[doctorName] = 0;
+        }
+        summary[dateKey].byDoctor[doctorName]++;
+      }
+
+      // Nếu là admin → nhóm theo bệnh viện
+      if (b.hospitalData) {
+        const hospitalName = b.hospitalData.name;
+        if (!summary[dateKey].byHospital[hospitalName]) {
+          summary[dateKey].byHospital[hospitalName] = 0;
+        }
+        summary[dateKey].byHospital[hospitalName]++;
+      }
+    });
+
+    return {
+      errCode: 0,
+      data: bookings,
+      summary,
+    };
+  } catch (error) {
+    console.log("Error in getBookingsForCalendarService:", error);
+    return {
+      errCode: -1,
+      errMessage: "Error from server",
+    };
+  }
+};
+
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
     getAllDoctors: getAllDoctors,
@@ -1161,5 +1292,6 @@ module.exports = {
     getListBookingApproval: getListBookingApproval,
     getListMedicalRecord: getListMedicalRecord,
     getAllLeaderHospital: getAllLeaderHospital,
-    getListBookingApprovalForLeader: getListBookingApprovalForLeader
+    getListBookingApprovalForLeader: getListBookingApprovalForLeader,
+    getBookingsForCalendarService: getBookingsForCalendarService
 }
