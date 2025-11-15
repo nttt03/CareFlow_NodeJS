@@ -95,7 +95,7 @@ let getTopDoctorHome = (limit) => {
             let users = await db.User.findAll({
                 where: { roleId: 'R2', status: 'A1' },
                 attributes: {
-                    exclude: ['password', 'resetPasswordExpires', 'resetPasswordToken'],
+                    exclude: ['password', 'resetPasswordExpires', 'resetPasswordToken', 'avatar'],
                     include: [
                         // Dùng literal để COUNT trực tiếp trong subquery
                         [db.sequelize.literal(`(
@@ -157,6 +157,9 @@ let searchAll = async ({ keyword, provinceId, specialtyId, hospitalId }) => {
           fullName: searchCondition,
         }),
       },
+      attributes: {
+        exclude: ['password', 'resetPasswordExpires', 'resetPasswordToken', 'avatar'],
+      },
       include: [
         {
           model: db.Doctor_Infor,
@@ -185,6 +188,9 @@ let searchAll = async ({ keyword, provinceId, specialtyId, hospitalId }) => {
         ...(keyword && { name: searchCondition }),
         ...(hospitalId && { id: hospitalId }),
       },
+      attributes: {
+        exclude: ['image'],
+      },
       include: [
         { model: db.Province, as: "provinceData" },
       ],
@@ -196,6 +202,9 @@ let searchAll = async ({ keyword, provinceId, specialtyId, hospitalId }) => {
       where: {
         ...(keyword && { name: searchCondition }),
         ...(specialtyId && { id: specialtyId }),
+      },
+      attributes: {
+        exclude: ['image'],
       },
     });
 

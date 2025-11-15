@@ -1,10 +1,11 @@
 import doctorService from "../services/doctorService";
 
 let getTopDoctorHome = async (req, res) => {
-    let limit = req.query.limit;
+    let { limit, page } = req.query;
+    page = +page || 1;
     if(!limit) limit = 10;
     try {
-        let response = await doctorService.getTopDoctorHome(+limit);
+        let response = await doctorService.getTopDoctorHome(+limit, page);
         return res.status(200).json(response);
     } catch (e) {
         console.log(e);

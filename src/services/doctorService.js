@@ -6,9 +6,14 @@ import notificationService from "../services/notificationService";
 
 const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
 
-let getTopDoctorHome = (limit) => {
+let getTopDoctorHome = (limit, page) => {
     return new Promise(async(resolve, reject) => {
         try {
+          let offset = (page - 1) * limit;
+            let count = await db.User.count({
+                where: { roleId: 'R2', status: 'A1' }
+            });
+
             let users = await db.User.findAll({
                 where: { roleId: 'R2', status: 'A1' },
                 attributes: {
@@ -42,13 +47,20 @@ let getTopDoctorHome = (limit) => {
                 group: ['User.id'],
                 order: [[db.sequelize.literal('bookingCount'), 'DESC']],
                 limit: limit,
+                offset,
                 raw: true, // Quan trọng: để literal hoạt động đúng
                 nest: true
             });
 
             resolve({
                 errCode: 0,
-                data: users
+                data: users,
+                pagination: {
+                    total: count,
+                    page,
+                    limit: limit,
+                    totalPages: Math.ceil(count / limit),
+                },
             });
         } catch (e) {
             console.log(e);
