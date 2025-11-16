@@ -44,14 +44,14 @@ const searchHospitalTool = {
   functionDeclarations: [
     {
       name: "searchHospital",
-      description: "Tìm kiếm bác sĩ, bệnh viện, chuyên khoa theo từ khóa, tỉnh, bệnh viện hoặc chuyên khoa",
+      description: "Tìm kiếm thông tin bác sĩ, bệnh viện theo từ khóa, tỉnh",
       parameters: {
         type: "object",
         properties: {
-          keyword: { type: "string", description: "Tên bác sĩ/bệnh viện/chuyên khoa" },
-          provinceId: { type: "integer" },
-          specialtyId: { type: "integer" },
-          hospitalId: { type: "integer" },
+          keyword: { type: "string", description: "Tên bác sĩ/bệnh viện" },
+          // provinceId: { type: "integer" },
+          // specialtyId: { type: "integer" },
+          // hospitalId: { type: "integer" },
         },
       },
     },
