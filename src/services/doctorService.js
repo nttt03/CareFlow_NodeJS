@@ -44,11 +44,11 @@ let getTopDoctorHome = (limit, page) => {
                         ]
                     }
                 ],
-                group: ['User.id'],
+                // group: ['User.id'],
                 order: [[db.sequelize.literal('bookingCount'), 'DESC']],
                 limit: limit,
                 offset,
-                raw: true, // Quan trọng: để literal hoạt động đúng
+                // raw: true, // Quan trọng: để literal hoạt động đúng
                 nest: true
             });
 
