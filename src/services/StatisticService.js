@@ -150,6 +150,8 @@ const getHospitalStatistics = async (hospitalId) => {
     const topDoctors = await db.Booking.findAll({
       attributes: [
         "doctorId",
+        [db.sequelize.col("infoDataDoctor.fullName"), "doctorName"],
+        [db.sequelize.col("infoDataDoctor.avatar"), "avatar"],
         [db.sequelize.fn("COUNT", db.sequelize.col("Booking.id")), "totalBookings"],
       ],
       where: whereCondition,
@@ -157,7 +159,8 @@ const getHospitalStatistics = async (hospitalId) => {
         {
           model: db.User,
           as: "infoDataDoctor",
-          attributes: ["fullName", "avatar"],
+          // attributes: ["fullName", "avatar"],
+          attributes: [],
         },
       ],
       group: ["Booking.doctorId"],
@@ -170,29 +173,31 @@ const getHospitalStatistics = async (hospitalId) => {
     // Top chuyên khoa nhiều lịch nhất
     const topSpecialties = await db.Booking.findAll({
       attributes: [
-        "doctorId",
-        [Sequelize.fn("COUNT", Sequelize.col("Booking.id")), "totalBookings"],
+        [db.sequelize.col("doctorInfoData.specialty.name"), "specialtyName"],
+        [db.sequelize.fn("COUNT", db.sequelize.col("Booking.id")), "totalBookings"],
       ],
       where: whereCondition,
       include: [
         {
           model: db.Doctor_Infor,
           as: "doctorInfoData",
+          attributes: [],
           include: [
             {
               model: db.Specialty,
               as: "specialty",
-              attributes: ["name"],
+              attributes: [],
             },
           ],
         },
       ],
-      group: ["doctorId"],
+      group: ["doctorInfoData.specialty.name"],
       order: [[db.sequelize.literal("totalBookings"), "DESC"]],
       limit: 5,
       raw: true,
       nest: true,
     });
+
 
     return {
       bookingsByStatus,
@@ -288,11 +293,12 @@ const getAdminStatistics = async () => {
         {
           model: db.Doctor_Infor,
           as: "doctorInfoData",
+          attributes: [],
           include: [
             {
               model: db.Specialty,
               as: "specialty",
-              attributes: ["name"],
+              attributes: [],
             },
           ],
         },
