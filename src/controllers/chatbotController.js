@@ -155,7 +155,7 @@ const chatWithDatabase = async (req, res) => {
       - Không hỏi lại "ID bệnh nhân là gì?"
       - Nếu không có dữ liệu → "Hiện tại không tìm thấy kết quả."
       - Luôn trả lời tự nhiên, thân thiện, như bác sĩ tư vấn.
-      - **Khi trả lời kiến thức y tế chung có liên quan (triệu chứng, thuốc, phòng ngừa), luôn thêm câu: "Lời khuyên này không thay thế bác sĩ. Vui lòng đi khám nếu triệu chứng kéo dài."**
+      - **Khi trả lời kiến thức y tế chung có liên quan (triệu chứng, thuốc, phòng ngừa), luôn thêm câu: "Lưu ý lời khuyên này không thể thay thế bác sĩ."**
     `.trim()
   });
 
