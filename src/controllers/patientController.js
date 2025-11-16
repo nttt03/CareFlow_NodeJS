@@ -218,6 +218,20 @@ let getReviews = async (req, res) => {
   }
 };
 
+let rejectBookingByPatient = async (req, res) => {
+  try {
+    let data = req.body;
+    let infor = await patientService.rejectBookingByPatient(data);
+    return res.status(200).json(infor);
+  } catch (e) {
+    console.log(e);
+    return res.status(200).json({
+      errCode: -1,
+      errMessage: "Error from server...",
+    });
+  }
+};
+
 module.exports = {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
@@ -231,5 +245,6 @@ module.exports = {
     searchAll: searchAll,
     getAppointmentNeedReview: getAppointmentNeedReview,
     handleCreateReview: handleCreateReview,
-    getReviews: getReviews
+    getReviews: getReviews,
+    rejectBookingByPatient: rejectBookingByPatient
 }

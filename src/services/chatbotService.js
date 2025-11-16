@@ -1,4 +1,7 @@
 import db from "../models/index";
+const moment = require("moment");
+require("moment/locale/vi");
+moment.locale("vi");
 
 const getBotReply = async (message) => {
   const text = message.toLowerCase();
@@ -27,12 +30,17 @@ let getNewAppointment = (inputId) => {
           errMessage: "Missing required parameters patientId",
         });
       } else {
+        let todayStart = new Date().setHours(0, 0, 0, 0); 
         let appointments = await db.Booking.findAll({
           where: {
             patientId: inputId,
             statusId: { [db.Sequelize.Op.in]: ["S1", "S2", "S5"] },
+            date: {
+              [db.Sequelize.Op.gte]: todayStart,
+            },
+
           },
-          attributes: ["statusId", "patientId", "date", "timeType", "rejectReason"],
+          attributes: ["id", "statusId", "patientId", "date", "timeType", "symptoms", "rejectReason", "createdAt", "updatedAt"],
           include: [
             {
               model: db.Doctor_Infor,
@@ -78,6 +86,13 @@ let getNewAppointment = (inputId) => {
           raw: true,
           nest: true,
         });
+        appointments = appointments.map((item) => {
+          return {
+            ...item,
+            formattedDate: moment(Number(item.date)).format("dddd, DD/MM/YYYY"),
+          };
+        });
+
         resolve({
           errCode: 0,
           dataAppointments: appointments,

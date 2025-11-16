@@ -421,7 +421,7 @@ let getNewAppointment = (inputId) => {
             patientId: inputId,
             statusId: { [db.Sequelize.Op.in]: ["S1", "S2", "S5"] }, // Lọc statusId là 'S1' hoặc 'S2'
           },
-          attributes: ["statusId", "patientId", "date", "timeType", "rejectReason"],
+          attributes: ["id", "statusId", "patientId", "date", "timeType", "rejectReason"],
           include: [
             {
               model: db.Doctor_Infor,
@@ -1242,6 +1242,133 @@ let getReviewsService = async (doctorId) => {
   }
 };
 
+let rejectBookingByPatient = (data) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let { bookingId, status, rejectReason, doctorId, hospitalId, fullNamePatient, fullNameDoctor } = data;
+
+      if (!bookingId) {
+        return resolve({
+          errCode: 1,
+          errMessage: "Missing required parameter: bookingId",
+        });
+      }
+
+      if (!rejectReason || !rejectReason.trim()) {
+        return resolve({
+          errCode: 1,
+          errMessage: "Lý do hủy là bắt buộc",
+        });
+      }
+
+      let booking = await db.Booking.findOne({
+        where: { id: bookingId },
+        raw: false,
+        include: [
+          {
+            model: db.User,
+            as: "patientData",
+            attributes: ["id", "fullName"],
+          },
+          {
+            model: db.User,
+            as: "infoDataDoctor",
+            attributes: ["id", "fullName"],
+          },
+        ],
+      });
+
+      if (!booking) {
+        return resolve({
+          errCode: 2,
+          errMessage: "Booking not found",
+        });
+      }
+
+      // Cập nhật trạng thái
+      booking.statusId = status;
+      booking.rejectReason = rejectReason.trim();
+      await booking.save();
+
+      // Giảm currentNumber của Schedule
+      let schedule = await db.Schedule.findOne({
+        where: {
+          doctorId: booking.doctorId,
+          date: booking.date,
+          timeType: booking.timeType,
+        },
+        raw: false
+      });
+
+      if (schedule) {
+        schedule.currentNumber = Math.max((schedule.currentNumber || 0) - 1, 0);
+        await schedule.save();
+      }
+
+      // Gửi thông báo cho Doctor
+      try {
+        await notificationService.createNotification({
+          senderId: booking.patientId,
+          receiverId: doctorId,
+          receiverRole: "R2",
+          message: `Lịch hẹn của bạn với ${fullNamePatient} đã bị hủy`,
+          url: `/doctor/view-appointment/${bookingId}`,
+        });
+      } catch (e) {
+        console.warn("Thông báo bác sĩ thất bại:", e);
+      }
+
+      // Gửi thông báo cho Admin
+      try {
+        const adminList = await db.User.findAll({
+          where: { roleId: "R1" },
+          attributes: ["id", "fullName"],
+        });
+
+        for (const admin of adminList) {
+          await notificationService.createNotification({
+            senderId: booking.patientId,
+            receiverId: admin.id,
+            receiverRole: "R1",
+            message: `Lịch hẹn của bác sĩ ${fullNameDoctor} với ${fullNamePatient} đã bị hủy`,
+            url: `/system/view-appointment/${bookingId}`,
+          });
+        }
+      } catch (e) {
+        console.warn("Thông báo admin thất bại:", e);
+      }
+
+      // Gửi thông báo cho Leader
+      try {
+        const leader = await db.User.findOne({
+          where: { roleId: "R4", hospitalId },
+        });
+
+        if (leader) {
+          await notificationService.createNotification({
+            senderId: booking.patientId,
+            receiverId: leader.id,
+            receiverRole: "R4",
+            message: `Lịch hẹn của bác sĩ ${fullNameDoctor} với ${fullNamePatient} đã bị hủy`,
+            url: `/leader-hospital/view-appointment/${bookingId}`,
+          });
+        }
+      } catch (e) {
+        console.warn("Thông báo leader thất bại:", e);
+      }
+
+      return resolve({
+        errCode: 0,
+        errMessage: "Hủy lịch hẹn thành công",
+        data: booking,
+      });
+
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 module.exports = {
   postBookApointment: postBookApointment,
   postVerifyBookApointment: postVerifyBookApointment,
@@ -1257,5 +1384,6 @@ module.exports = {
   getAppointmentNeedReview: getAppointmentNeedReview,
   handleCreateReview: handleCreateReview,
   getReviewsService: getReviewsService,
+  rejectBookingByPatient: rejectBookingByPatient,
 
 };

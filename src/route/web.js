@@ -90,6 +90,7 @@ let initWebRoutes = (app) => {
     router.get("/api/search", patientController.searchAll);
     router.post("/api/review-doctor", checkUserJWT, patientController.handleCreateReview);
     router.get("/api/reviews", patientController.getReviews);
+    router.put("/api/reject-booking-by-patient", patientController.rejectBookingByPatient);
 
     router.get("/api/doctor/:doctorId/statistics", StatisticController.getDoctorStatistics);
     router.get("/api/hospital/:hospitalId/statistics", StatisticController.getHospitalStatistics);
