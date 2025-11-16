@@ -1,6 +1,6 @@
-import db from "../models/index";
-const moment = require("moment");
-require("moment/locale/vi");
+import db from "../models/index.js";
+import moment from "moment";
+await import("moment/locale/vi.js");
 moment.locale("vi");
 
 const getBotReply = async (message) => {
@@ -230,7 +230,7 @@ let searchAll = async ({ keyword, provinceId, specialtyId, hospitalId }) => {
     };
   }
 
-module.exports = {
+export default {
   getBotReply,
   getNewAppointment,
   getTopDoctorHome,

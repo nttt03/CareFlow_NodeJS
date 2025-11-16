@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+export default {
   up: async (queryInterface, Sequelize) => {
     /**
      * Thay đổi cột rating từ STRING → DECIMAL(3,2)

@@ -1,4 +1,4 @@
-import hospitalService from '../services/hospitalService'
+import hospitalService from '../services/hospitalService.js'
 
 let createHospital = async (req, res) => {
     try {
@@ -224,7 +224,7 @@ let savePriceForHospital = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
     getAllHospitalByAdmin: getAllHospitalByAdmin,

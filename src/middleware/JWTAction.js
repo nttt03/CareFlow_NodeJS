@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
-require('dotenv').config();
+import "dotenv/config.js";
 import axios from "axios";
 
 const nonSecurePaths = ["/login", "/register"];
 
-const verifyCaptcha = async (req, res, next) => {
+export const verifyCaptcha = async (req, res, next) => {
   try {
     const token = req.body.captchaToken;
     if (!token) {
@@ -36,7 +36,7 @@ const verifyCaptcha = async (req, res, next) => {
   }
 };
 
-const createJWT = (payload) => {
+export const createJWT = (payload) => {
     let key = process.env.JWT_SECRET;
     let token = null;
     try {
@@ -48,7 +48,7 @@ const createJWT = (payload) => {
     return token;
 }
 
-const verifyToken = (token) => {
+export const verifyToken = (token) => {
     let key = process.env.JWT_SECRET;
     let decoded = null;
     try {
@@ -59,7 +59,7 @@ const verifyToken = (token) => {
     return decoded;
 }
 
-const checkUserJWT = (req, res, next) => {
+export const checkUserJWT = (req, res, next) => {
     if (nonSecurePaths.includes(req.path)) return next();
     let cookies = req.cookies;
     if (cookies && cookies.jwt) {
@@ -87,7 +87,7 @@ const checkUserJWT = (req, res, next) => {
 
 }
 
-const checkUserPermission = (req, res, next) => {
+export const checkUserPermission = (req, res, next) => {
     if (nonSecurePaths.includes(req.path) || req.path === '/account') return next();
     if (req.user) {
         let email = req.user.email;
@@ -119,6 +119,6 @@ const checkUserPermission = (req, res, next) => {
     }
 }
 
-module.exports = {
+export default {
     verifyCaptcha, createJWT, verifyToken, checkUserJWT, checkUserPermission
 }

@@ -1,4 +1,4 @@
-import notificationService from '../services/notificationService'
+import notificationService from '../services/notificationService.js'
 
 let createNotification = async (req, res) => {
   let result = await notificationService.createNotification(req.body);
@@ -17,7 +17,7 @@ let markAsRead = async (req, res) => {
   return res.status(200).json(result);
 };
 
-module.exports = {
+export default {
   createNotification,
   getNotificationsByUser,
   markAsRead,

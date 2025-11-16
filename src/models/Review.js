@@ -1,7 +1,7 @@
 "use strict";
-const { Model } = require("sequelize");
+import { Model } from "sequelize";
 // models/Review.js
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
   class Review extends Model {
     static associate(models) {
       Review.belongsTo(models.User, { foreignKey: 'patientId', as: 'patient' });
@@ -51,7 +51,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Review',
-    tableName: 'Reviews',
+    tableName: "reviews",
+    freezeTableName: true,
     indexes: [
       { fields: ['doctorId'] },
       { fields: ['bookingId'], unique: true },

@@ -1,4 +1,4 @@
-import patientService from '../services/patientService';
+import patientService from '../services/patientService.js';
 
 let postBookApointment = async (req, res) => {
     try {
@@ -232,7 +232,7 @@ let rejectBookingByPatient = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
     getNewAppointment: getNewAppointment,

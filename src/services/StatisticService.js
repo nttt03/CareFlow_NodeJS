@@ -1,5 +1,5 @@
-import db from "../models/index";
-const { Op, Sequelize } = require("sequelize");
+import db from "../models/index.js";
+import { Op, Sequelize } from "sequelize";
 
 const getDoctorStatistics = async (doctorId) => {
   try {
@@ -358,7 +358,7 @@ const getAdminStatistics = async () => {
   }
 };
 
-module.exports = {
+export default {
   getDoctorStatistics: getDoctorStatistics,
   getHospitalStatistics: getHospitalStatistics,
   getAdminStatistics: getAdminStatistics

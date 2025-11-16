@@ -1,4 +1,4 @@
-require("dotenv").config();
+import "dotenv/config.js"
 import nodemailer from "nodemailer";
 
 let sendSimpleEmail = async (dataSend) => {
@@ -233,7 +233,7 @@ let getBodyHTMLEmailReminder = (dataSend) => {
   return result;
 };
 
-let sendResetPasswordEmail = async (dataSend) => {
+export const sendResetPasswordEmail = async (dataSend) => {
   let transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
@@ -275,7 +275,7 @@ let getResetPasswordHTML = (dataSend) => {
   `;
 };
 
-module.exports = {
+export default {
   sendSimpleEmail: sendSimpleEmail,
   sendAttachment: sendAttachment,
   sendReminderEmail: sendReminderEmail,

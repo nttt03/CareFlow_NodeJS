@@ -1,7 +1,7 @@
 "use strict";
-const { Model } = require("sequelize");
+import { Model } from "sequelize";
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
       // Liên kết với bảng địa chỉ
@@ -98,6 +98,8 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "User",
+      tableName: "users",
+      freezeTableName: true,
       indexes: [
         { fields: ["provinceId"] }, // Chỉ mục cho provinceId
         { fields: ["communeUnitId"] }, // Chỉ mục cho communeUnitId

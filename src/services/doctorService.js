@@ -1,8 +1,8 @@
-import db from '../models/index';
-require('dotenv').config();
+import db from '../models/index.js';
+import "dotenv/config.js";
 import _ from "lodash";
-import emailService from '../services/emailService';
-import notificationService from "../services/notificationService";
+import emailService from '../services/emailService.js';
+import notificationService from "../services/notificationService.js";
 
 const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
 
@@ -1285,7 +1285,7 @@ let getBookingsForCalendarService = async (startDate, endDate, roleId, userId, h
   }
 };
 
-module.exports = {
+export default {
     getTopDoctorHome: getTopDoctorHome,
     getAllDoctors: getAllDoctors,
     saveDetailInforDoctor: saveDetailInforDoctor,

@@ -1,4 +1,4 @@
-import userServise from '../services/userService'
+import userServise from '../services/userService.js'
 
 let handleLogin = async (req, res) => {
     try {
@@ -235,7 +235,7 @@ let handleResetPassword = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     handleLogin: handleLogin,
     handleRegister: handleRegister,
     handleGetAllUsers: handleGetAllUsers,

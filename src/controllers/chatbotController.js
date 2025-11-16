@@ -1,5 +1,5 @@
-const chatbotService = require('../services/chatbotService');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import chatbotService from "../services/chatbotService.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // 1. Định nghĩa Tool
 const getNewAppointmentTool = {
@@ -208,4 +208,4 @@ const chatWithDatabase = async (req, res) => {
   }
 };
 
-module.exports = { chatWithDatabase };
+export default { chatWithDatabase };

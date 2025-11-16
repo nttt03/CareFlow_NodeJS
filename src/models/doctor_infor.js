@@ -1,7 +1,7 @@
 "use strict";
-const { Model } = require("sequelize");
+import { Model } from "sequelize";
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
   class Doctor_Infor extends Model {
     static associate(models) {
       Doctor_Infor.belongsTo(models.User, {
@@ -48,7 +48,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: "Doctor_Infor",
-    tableName: "Doctor_Infor",
+    tableName: "doctor_infor",
+    freezeTableName: true,
   });
   return Doctor_Infor;
 };

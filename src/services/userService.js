@@ -1,8 +1,8 @@
 import { where } from "sequelize";
-import db from "../models/index";
-import { createJWT } from "../middleware/JWTAction";
+import db from "../models/index.js";
+import { createJWT } from "../middleware/JWTAction.js";
 import bcrypt from "bcryptjs";
-import {sendResetPasswordEmail} from "../services/emailService";
+import {sendResetPasswordEmail} from "../services/emailService.js";
 import crypto from "crypto";
 
 const salt = bcrypt.genSaltSync(10);
@@ -580,7 +580,7 @@ let handleResetPassword = async (token, newPassword) => {
   });
 };
 
-module.exports = {
+export default {
   handleUserLogin: handleUserLogin,
   registerNewUser: registerNewUser,
   getAllUsers: getAllUsers,

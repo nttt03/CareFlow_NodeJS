@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-module.exports = {
+export default {
   up: async (queryInterface, Sequelize) => {
     const modelsDir = path.join(__dirname, '../models');
     const modelFiles = fs.readdirSync(modelsDir).filter(file => file.endsWith('.js'));

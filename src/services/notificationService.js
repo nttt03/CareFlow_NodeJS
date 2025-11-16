@@ -1,5 +1,5 @@
-import db from "../models/index";
-import { getIo } from "../socketIO"
+import db from "../models/index.js";
+import { getIo } from "../socketIO.js"
 
 function getRoom(receiverRole, receiverId) {
   if (receiverRole === "R2") return `doctor_${receiverId}`;
@@ -126,7 +126,7 @@ let markAsRead = async (id) => {
   }
 };
 
-module.exports = {
+export default {
   createNotification,
   getNotificationsByUser,
   markAsRead,

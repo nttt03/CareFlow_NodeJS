@@ -1,8 +1,6 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
+import { Model } from "sequelize";
+export default (sequelize, DataTypes) => {
   class Markdown extends Model {
     /**
      * Helper method for defining associations.
@@ -23,6 +21,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Markdown',
+    tableName: "markdowns",
+    freezeTableName: true,
   });
   return Markdown;
 };

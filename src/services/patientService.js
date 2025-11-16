@@ -1,10 +1,10 @@
-import { includes } from "lodash";
-import db from "../models/index";
-import emailService from "../services/emailService";
-import notificationService from "../services/notificationService";
+
+import db from "../models/index.js";
+import emailService from "../services/emailService.js";
+import notificationService from "../services/notificationService.js";
 import { v4 as uuidv4 } from "uuid";
-require("dotenv").config();
-const { Op, Sequelize } = require("sequelize");
+import "dotenv/config.js"
+import { Op, Sequelize } from "sequelize";
 
 let buildUrlEmail = (doctorId, token) => {
   let result = `${process.env.URL_REACT}/verify-booking?token=${token}&doctorId=${doctorId}`;
@@ -1369,7 +1369,7 @@ let rejectBookingByPatient = (data) => {
   });
 };
 
-module.exports = {
+export default {
   postBookApointment: postBookApointment,
   postVerifyBookApointment: postVerifyBookApointment,
   getNewAppointment: getNewAppointment,

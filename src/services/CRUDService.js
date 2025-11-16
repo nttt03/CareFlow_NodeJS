@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'; // import thư viện hashPassword
-import db from '../models/index';
-import { raw } from 'body-parser';
+import db from '../models/index.js';
+import bodyParser from 'body-parser';  // DEFAULT IMPORT
+const { raw } = bodyParser;  // DESTRUCTURE TỪ DEFAULT
 import { where } from 'sequelize';
 
 const salt = bcrypt.genSaltSync(10);
@@ -121,7 +122,7 @@ let deleteUserById = (userId) =>{
     })
 }
 
-module.exports = {
+export default {
     createNewUser: createNewUser,
     getAllUser: getAllUser,
     getUserInfoById: getUserInfoById,

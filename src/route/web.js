@@ -1,15 +1,15 @@
 import express from "express";
 import multer from "multer";
-import homeController from "../controllers/homeController";
-import userController from "../controllers/userController";
-import doctorController from "../controllers/doctorController";
-import patientController from "../controllers/patientController";
-import specialtyController from "../controllers/specialtyController";
-import hospitalController from "../controllers/hospitalController";
-import chatbotController  from "../controllers/chatbotController";
-import { checkUserJWT, verifyCaptcha } from "../middleware/JWTAction";
-import notificationController from "../controllers/notificationController";
-import StatisticController from "../controllers/StatisticController";
+import homeController from "../controllers/homeController.js";
+import userController from "../controllers/userController.js";
+import doctorController from "../controllers/doctorController.js";
+import patientController from "../controllers/patientController.js";
+import specialtyController from "../controllers/specialtyController.js";
+import hospitalController from "../controllers/hospitalController.js";
+import chatbotController  from "../controllers/chatbotController.js";
+import { checkUserJWT, verifyCaptcha } from "../middleware/JWTAction.js";
+import notificationController from "../controllers/notificationController.js";
+import StatisticController from "../controllers/StatisticController.js";
 let router = express.Router();
 // Cấu hình multer (lưu file trong bộ nhớ RAM)
 const storage = multer.memoryStorage();
@@ -115,4 +115,4 @@ let initWebRoutes = (app) => {
     return app.use("/", router);
 }
 
-module.exports = initWebRoutes;
+export default initWebRoutes;

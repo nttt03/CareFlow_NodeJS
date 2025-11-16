@@ -1,6 +1,6 @@
 "use strict";
-const { Model } = require("sequelize");
-module.exports = (sequelize, DataTypes) => {
+import { Model } from "sequelize";
+export default (sequelize, DataTypes) => {
   class Patient_Profile extends Model {
     static associate(models) {
       Patient_Profile.belongsTo(models.User, {
@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Patient_Profile",
+      tableName: "patient_profile",
       freezeTableName: true,
       timestamps: false,
     }

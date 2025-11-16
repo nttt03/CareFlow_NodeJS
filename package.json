@@ -2,10 +2,12 @@
   "name": "nodejs",
   "version": "1.0.0",
   "description": "backend nodejs CareFlow",
-  "main": "server.js",
+  "main": "src/server.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon --exec ./node_modules/.bin/babel-node src/server.js"
+    "start": "node src/server.js",
+    "dev": "nodemon --exec ./node_modules/.bin/babel-node src/server.js"
   },
   "keywords": [
     "fullstack",
@@ -17,7 +19,6 @@
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@isaacs/cliui": "^8.0.2",
     "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
@@ -33,15 +34,14 @@
     "node-cron": "^2.0.3",
     "nodemailer": "6.6.3",
     "socket.io": "^4.8.1",
-    "uuid": "8.3.2"
-  },
-  "devDependencies": {
+    "uuid": "8.3.2",
+    "sequelize": "^6.37.3",
+    "nodemon": "^2.0.7",
     "@babel/core": "^7.12.10",
     "@babel/node": "^7.12.10",
-    "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
-    "@babel/preset-env": "^7.12.10",
-    "nodemon": "^2.0.7",
-    "sequelize": "^6.37.3",
+    "@babel/preset-env": "^7.12.10"
+  },
+  "devDependencies": {
     "sequelize-cli": "^6.2.0"
   }
 }

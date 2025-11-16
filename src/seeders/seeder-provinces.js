@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = {
+export default {
   up: async (queryInterface, Sequelize) => {
     const provinces = [
       { code: "01", name: "Hà Nội" },

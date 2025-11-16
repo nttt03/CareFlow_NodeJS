@@ -56,7 +56,7 @@ let getAdminStatistics = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   getDoctorStatistics: getDoctorStatistics,
   getHospitalStatistics: getHospitalStatistics,
   getAdminStatistics: getAdminStatistics

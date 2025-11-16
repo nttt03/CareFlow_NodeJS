@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+export default {
   up: async (queryInterface, Sequelize) => {
     // Danh sách bảng thực tế trong DB (loại bỏ sequelize meta)
     const targetTables = [

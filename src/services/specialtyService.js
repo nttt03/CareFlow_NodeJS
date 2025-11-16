@@ -1,5 +1,5 @@
-import db from '../models/index';
-const { Op } = require("sequelize");
+import db from '../models/index.js';
+import { Op } from "sequelize";
 
 let createSpecialty = (data) => {
     return new Promise(async(resolve, reject) => {
@@ -330,7 +330,7 @@ let deleteSpecialtyById = async (id) => {
   }
 };
 
-module.exports = {
+export default {
     createSpecialty: createSpecialty,
     getAllSpecialty: getAllSpecialty,
     getDetailSpecialtyById: getDetailSpecialtyById,

@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = {
+export default {
   async up(queryInterface, Sequelize) {
     await queryInterface.addColumn("Hospital_Specialties", "price", {
       type: Sequelize.INTEGER,

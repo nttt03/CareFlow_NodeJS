@@ -1,4 +1,4 @@
-import doctorService from "../services/doctorService";
+import doctorService from "../services/doctorService.js";
 
 let getTopDoctorHome = async (req, res) => {
     let { limit, page } = req.query;
@@ -280,7 +280,7 @@ let getBookingsForCalendar = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
     getTopDoctorHome: getTopDoctorHome,
     getGetAllDoctor: getGetAllDoctor,
     postInforDoctor: postInforDoctor,

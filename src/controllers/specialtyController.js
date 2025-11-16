@@ -1,4 +1,4 @@
-import specialtyService from '../services/specialtyService';
+import specialtyService from '../services/specialtyService.js';
 
 let createSpecialty = async (req, res) => {
     try {
@@ -95,7 +95,7 @@ let deleteSpecialtyById = async (req, res) => {
 };
 
 
-module.exports = {
+export default {
     createSpecialty: createSpecialty,
     getAllSpecialty: getAllSpecialty,
     getDetailSpecialtyById: getDetailSpecialtyById,

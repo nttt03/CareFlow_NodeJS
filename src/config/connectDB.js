@@ -17,13 +17,15 @@
 // }
 
 
-// module.exports = connectDB;
+// export default connectDB;
 
 
 // connectDB.js
 // connectDB.js
-const { Sequelize } = require('sequelize');
-require('dotenv').config();
+// src/config/connectDB.js
+import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
+dotenv.config();
 
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'railway',
@@ -35,10 +37,7 @@ const sequelize = new Sequelize(
     dialect: 'mysql',
     logging: false,
     dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
+      ssl: { require: true, rejectUnauthorized: false }
     },
     timezone: '+07:00'
   }
@@ -55,5 +54,4 @@ const connectDB = async () => {
   }
 };
 
-// XUẤT ĐÚNG CÁCH (CommonJS)
-module.exports = { sequelize, connectDB };
+export default connectDB;

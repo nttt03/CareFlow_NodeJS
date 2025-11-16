@@ -1,6 +1,6 @@
 
-import db from '../models/index';
-import CRUDService from '../services/CRUDService';
+import db from '../models/index.js';
+import CRUDService from '../services/CRUDService.js';
 
 let getHomePage = async (rep, res) => {
     try {
@@ -72,7 +72,7 @@ let deleteCRUD = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     getHomePage: getHomePage,
     getCRUD: getCRUD,
     postCRUD: postCRUD,

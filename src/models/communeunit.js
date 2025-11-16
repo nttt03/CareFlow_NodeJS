@@ -1,7 +1,7 @@
 "use strict";
-const { Model } = require("sequelize");
+import { Model } from "sequelize";
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
   class CommuneUnit extends Model {
     static associate(models) {
       // Mỗi xã/phường thuộc một tỉnh
@@ -33,6 +33,8 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "CommuneUnit",
+      tableName: "communeunits",
+      freezeTableName: true,
       indexes: [
         { fields: ["code"], unique: true }, // Chỉ mục cho code
         { fields: ["provinceId"] }, // Chỉ mục cho provinceId để tối ưu truy vấn theo tỉnh

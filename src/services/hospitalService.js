@@ -1,5 +1,5 @@
-import db from '../models/index';
-const { Op } = require("sequelize");
+import db from '../models/index.js';
+import { Op } from "sequelize";
 
 let createHospital = (data) => {
     return new Promise(async(resolve, reject) => {
@@ -503,7 +503,7 @@ let saveLeaderForHospitalService = async (hospitalId, leaderId) => {
   }
 };
 
-module.exports = {
+export default {
     createHospital: createHospital,
     getAllHospital: getAllHospital,
     getAllHospitalByAdmin: getAllHospitalByAdmin,
