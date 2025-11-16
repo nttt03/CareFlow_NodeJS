@@ -13,13 +13,23 @@ let handleLogin = async (req, res) => {
         }
         let userData = await userServise.handleUserLogin(email, password);
         // mỗi khi login sẽ set cookie, JWT được gửi về client qua res.cookie() (httpOnly)
+        // if (userData && userData.user && userData.user.access_token) {
+        //     res.clearCookie("jwt");
+        //     res.cookie("jwt", userData.user.access_token, {
+        //     httpOnly: true,
+        //     secure: false,          // nếu chạy HTTPS (production) thì để true
+        //     sameSite: "lax", 
+        //     domain: "localhost",
+        //     // maxAge: 60 * 60 * 1000, // 1 giờ
+        //     maxAge: 24 * 60 * 60 * 1000, // 1 ngày
+        //     });
+        // }
         if (userData && userData.user && userData.user.access_token) {
             res.clearCookie("jwt");
             res.cookie("jwt", userData.user.access_token, {
             httpOnly: true,
-            secure: false,          // nếu chạy HTTPS (production) thì để true
-            sameSite: "lax", 
-            domain: "localhost",
+            secure: true,          // nếu chạy HTTPS (production) thì để true
+            sameSite: "none",
             // maxAge: 60 * 60 * 1000, // 1 giờ
             maxAge: 24 * 60 * 60 * 1000, // 1 ngày
             });
