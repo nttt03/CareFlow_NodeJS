@@ -22,7 +22,7 @@ let getTopDoctorHome = (limit, page) => {
                         // Dùng literal để COUNT trực tiếp trong subquery
                         [db.sequelize.literal(`(
                             SELECT COUNT(*) 
-                            FROM Bookings AS b 
+                            FROM bookings AS b 
                             WHERE b.doctorId = User.id 
                             AND b.statusId IN ('S2', 'S4')
                         )`), 'bookingCount']
