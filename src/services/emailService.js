@@ -1,11 +1,16 @@
 import "dotenv/config.js"
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+// const resend = new Resend(process.env.RESEND_API_KEY);
 
 let sendSimpleEmail = async (dataSend) => {
   let transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // true for port 465, false for other ports
+    // port: 587,
+    // secure: false, // true for port 465, false for other ports
+    port: 465,
+    secure: true, // SSL
     auth: {
       user: process.env.EMAIL_APP,
       pass: process.env.EMAIL_APP_PASSWORD,
@@ -19,6 +24,27 @@ let sendSimpleEmail = async (dataSend) => {
   });
   // console.log('dataSend >>>: ', dataSend);
 };
+
+// let sendSimpleEmail = async (dataSend) => {
+//   try {
+//     const response = await resend.emails.send({
+//       from: "CareFlow 🩺 <onboarding@resend.dev>",
+//       to: dataSend.receiverEmail,
+//       subject: "Thông tin đặt lịch khám bệnh",
+//       html: getBodyHTMLEmail(dataSend),
+//     });
+
+//     console.log("Email sent successfully:", response);
+//     return response;
+
+//   } catch (error) {
+//     console.error("Send email error:", error?.message || error);
+//     return {
+//       errCode: -1,
+//       message: "Failed to send email"
+//     };
+//   }
+// };
 
 let getBodyHTMLEmail = (dataSend) => {
   let result = "";

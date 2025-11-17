@@ -216,7 +216,7 @@ let getDetailSpecialtyById = (inputId, location) => {
               nest: true,
             });
           }
-
+          data = data.get({ plain: true });
           data.hospitalSpecialties = hospitalSpecialties;
         } else data = {};
 
