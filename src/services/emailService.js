@@ -1,29 +1,165 @@
 import "dotenv/config.js"
 import nodemailer from "nodemailer";
+import { google } from "googleapis";
 import { Resend } from "resend";
 
 // const resend = new Resend(process.env.RESEND_API_KEY);
 
-let sendSimpleEmail = async (dataSend) => {
-  let transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    // port: 587,
-    // secure: false, // true for port 465, false for other ports
-    port: 465,
-    secure: true, // SSL
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
+);
+
+// Hàm tạo transporter đã auth bằng OAuth2
+const getGmailTransporter = async () => {
+  oauth2Client.setCredentials({
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+  });
+
+  const accessToken = await oauth2Client.getAccessToken();
+
+  return nodemailer.createTransport({
+    service: "gmail",
     auth: {
+      type: "OAuth2",
       user: process.env.EMAIL_APP,
-      pass: process.env.EMAIL_APP_PASSWORD,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+      accessToken: accessToken.token,
     },
   });
-  let info = await transporter.sendMail({
-    from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>', // sender address
-    to: dataSend.receiverEmail, // list of receivers
-    subject: "Thông tin đặt lịch khám bệnh", // Subject line
-    html: getBodyHTMLEmail(dataSend), // html body
-  });
-  // console.log('dataSend >>>: ', dataSend);
 };
+
+let sendSimpleEmail = async (dataSend) => {
+  try {
+    const transporter = await getGmailTransporter();
+
+    await transporter.sendMail({
+      from: `"CareFlow" <${process.env.EMAIL_APP}>`,
+      to: dataSend.receiverEmail,
+      subject: "Thông tin đặt lịch khám bệnh",
+      html: getBodyHTMLEmail(dataSend),
+    });
+
+    console.log("Email đã gửi thành công!!!");
+  } catch (error) {
+    console.error("Lỗi gửi email:", error.message);
+    throw error;
+  }
+};
+
+// 1. Gửi email có file đính kèm (đơn thuốc PDF/ảnh)
+let sendAttachment = async (dataSend) => {
+  try {
+    if (!dataSend.email || !dataSend.imgBase64) {
+      throw new Error("Missing email or file data");
+    }
+
+    const transporter = await getGmailTransporter();
+
+    // Xử lý base64
+    const matches = dataSend.imgBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error("Invalid base64 format");
+    }
+
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, "base64");
+
+    let extension = "png";
+    if (mimeType.includes("pdf")) extension = "pdf";
+    else if (mimeType.includes("jpeg")) extension = "jpg";
+
+    const filename = `don-thuoc-${dataSend.patientId}-${Date.now()}.${extension}`;
+
+    const info = await transporter.sendMail({
+      from: `"CareFlow 🩺" <${process.env.EMAIL_APP}>`,
+      to: dataSend.email,
+      subject: "Đơn thuốc & Kết quả khám bệnh",
+      html: getBodyHTMLEmailRemeDy(dataSend),
+      attachments: [
+        {
+          filename,
+          content: buffer,
+          // encoding: "base64" không cần thiết khi dùng Buffer
+        },
+      ],
+    });
+
+    console.log("Email đơn thuốc đã gửi thành công:", info.messageId);
+    return info;
+  } catch (error) {
+    console.error("Lỗi gửi email đơn thuốc:", error.message);
+    throw error;
+  }
+};
+
+// 2. Gửi email nhắc lịch
+let sendReminderEmail = async (dataSend) => {
+  try {
+    const transporter = await getGmailTransporter();
+
+    const info = await transporter.sendMail({
+      from: `"CareFlow 🩺" <${process.env.EMAIL_APP}>`,
+      to: dataSend.receiverEmail,
+      subject:
+        dataSend.language === "vi"
+          ? "Nhắc nhở lịch hẹn khám bệnh"
+          : "Appointment Reminder",
+      html: getBodyHTMLEmailReminder(dataSend),
+    });
+
+    console.log("Email nhắc lịch đã gửi thành công!");
+    return info;
+  } catch (error) {
+    console.error("Lỗi gửi email nhắc lịch:", error.message);
+    throw error;
+  }
+};
+
+// 3. Gửi email đặt lại mật khẩu
+export const sendResetPasswordEmail = async (dataSend) => {
+  try {
+    const transporter = await getGmailTransporter();
+
+    const info = await transporter.sendMail({
+      from: `"CareFlow 🩺" <${process.env.EMAIL_APP}>`,
+      to: dataSend.receiverEmail,
+      subject: "Đặt lại mật khẩu - CareFlow",
+      html: getResetPasswordHTML(dataSend),
+    });
+
+    console.log("Email đặt lại mật khẩu đã gửi thành công!");
+    return info;
+  } catch (error) {
+    console.error("Lỗi gửi email reset password:", error.message);
+    throw error;
+  }
+};
+
+// let sendSimpleEmail = async (dataSend) => {
+//   let transporter = nodemailer.createTransport({
+//     host: "smtp.gmail.com",
+//     // port: 587,
+//     // secure: false, // true for port 465, false for other ports
+//     port: 465,
+//     secure: true, // SSL
+//     auth: {
+//       user: process.env.EMAIL_APP,
+//       pass: process.env.EMAIL_APP_PASSWORD,
+//     },
+//   });
+//   let info = await transporter.sendMail({
+//     from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>', // sender address
+//     to: dataSend.receiverEmail, // list of receivers
+//     subject: "Thông tin đặt lịch khám bệnh", // Subject line
+//     html: getBodyHTMLEmail(dataSend), // html body
+//   });
+//   // console.log('dataSend >>>: ', dataSend);
+// };
 
 // let sendSimpleEmail = async (dataSend) => {
 //   try {
@@ -111,65 +247,65 @@ let getBodyHTMLEmail = (dataSend) => {
 //   });
 // };
 
-let sendAttachment = async (dataSend) => {
-  try {
-    // 1. Kiểm tra dữ liệu đầu vào
-    if (!dataSend.email || !dataSend.imgBase64) {
-      throw new Error("Missing email or file data");
-    }
+// let sendAttachment = async (dataSend) => {
+//   try {
+//     // 1. Kiểm tra dữ liệu đầu vào
+//     if (!dataSend.email || !dataSend.imgBase64) {
+//       throw new Error("Missing email or file data");
+//     }
 
-    // 2. Tạo transporter (chỉ tạo 1 lần ngoài hàm nếu có thể)
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_APP,
-        pass: process.env.EMAIL_APP_PASSWORD,
-      },
-    });
+//     // 2. Tạo transporter (chỉ tạo 1 lần ngoài hàm nếu có thể)
+//     const transporter = nodemailer.createTransport({
+//       host: "smtp.gmail.com",
+//       port: 587,
+//       secure: false,
+//       auth: {
+//         user: process.env.EMAIL_APP,
+//         pass: process.env.EMAIL_APP_PASSWORD,
+//       },
+//     });
 
-    // 3. Xử lý base64 → buffer + lấy MIME type + extension
-    const matches = dataSend.imgBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      throw new Error("Invalid base64 format");
-    }
+//     // 3. Xử lý base64 → buffer + lấy MIME type + extension
+//     const matches = dataSend.imgBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+//     if (!matches || matches.length !== 3) {
+//       throw new Error("Invalid base64 format");
+//     }
 
-    const mimeType = matches[1]; // image/png, application/pdf
-    const base64Data = matches[2];
-    const buffer = Buffer.from(base64Data, "base64");
+//     const mimeType = matches[1]; // image/png, application/pdf
+//     const base64Data = matches[2];
+//     const buffer = Buffer.from(base64Data, "base64");
 
-    // 4. Xác định tên file + extension
-    let extension = "png";
-    if (mimeType === "application/pdf") extension = "pdf";
-    else if (mimeType === "image/jpeg") extension = "jpg";
-    else if (mimeType === "image/jpg") extension = "jpg";
+//     // 4. Xác định tên file + extension
+//     let extension = "png";
+//     if (mimeType === "application/pdf") extension = "pdf";
+//     else if (mimeType === "image/jpeg") extension = "jpg";
+//     else if (mimeType === "image/jpg") extension = "jpg";
 
-    const filename = `don-thuoc-${dataSend.patientId}-${Date.now()}.${extension}`;
+//     const filename = `don-thuoc-${dataSend.patientId}-${Date.now()}.${extension}`;
 
-    // 5. Gửi email
-    const info = await transporter.sendMail({
-      from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>', // sender address
-      to: dataSend.email,
-      subject: "Đơn thuốc & Kết quả khám bệnh",
-      html: getBodyHTMLEmailRemeDy(dataSend),
-      attachments: [
-        {
-          filename,
-          content: buffer,
-          encoding: "base64",
-        },
-      ],
-    });
+//     // 5. Gửi email
+//     const info = await transporter.sendMail({
+//       from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>', // sender address
+//       to: dataSend.email,
+//       subject: "Đơn thuốc & Kết quả khám bệnh",
+//       html: getBodyHTMLEmailRemeDy(dataSend),
+//       attachments: [
+//         {
+//           filename,
+//           content: buffer,
+//           encoding: "base64",
+//         },
+//       ],
+//     });
 
-    console.log("Email sent: ", info.messageId);
-    return info;
+//     console.log("Email sent: ", info.messageId);
+//     return info;
 
-  } catch (error) {
-    console.error("Lỗi gửi email đơn thuốc:", error);
-    throw error; // Để caller xử lý
-  }
-};
+//   } catch (error) {
+//     console.error("Lỗi gửi email đơn thuốc:", error);
+//     throw error; // Để caller xử lý
+//   }
+// };
 
 let getBodyHTMLEmailRemeDy = (dataSend) => {
   let result = "";
@@ -198,27 +334,27 @@ let getBodyHTMLEmailRemeDy = (dataSend) => {
 };
 
 // Add function for sending reminder emails
-let sendReminderEmail = async (dataSend) => {
-  let transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_APP,
-      pass: process.env.EMAIL_APP_PASSWORD,
-    },
-  });
+// let sendReminderEmail = async (dataSend) => {
+//   let transporter = nodemailer.createTransport({
+//     host: "smtp.gmail.com",
+//     port: 587,
+//     secure: false,
+//     auth: {
+//       user: process.env.EMAIL_APP,
+//       pass: process.env.EMAIL_APP_PASSWORD,
+//     },
+//   });
 
-  let info = await transporter.sendMail({
-    from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>',
-    to: dataSend.receiverEmail,
-    subject:
-      dataSend.language === "vi"
-        ? "Nhắc nhở lịch hẹn khám bệnh"
-        : "Appointment Reminder",
-    html: getBodyHTMLEmailReminder(dataSend),
-  });
-};
+//   let info = await transporter.sendMail({
+//     from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>',
+//     to: dataSend.receiverEmail,
+//     subject:
+//       dataSend.language === "vi"
+//         ? "Nhắc nhở lịch hẹn khám bệnh"
+//         : "Appointment Reminder",
+//     html: getBodyHTMLEmailReminder(dataSend),
+//   });
+// };
 
 // HTML template for reminder email
 let getBodyHTMLEmailReminder = (dataSend) => {
@@ -259,24 +395,24 @@ let getBodyHTMLEmailReminder = (dataSend) => {
   return result;
 };
 
-export const sendResetPasswordEmail = async (dataSend) => {
-  let transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_APP,
-      pass: process.env.EMAIL_APP_PASSWORD,
-    },
-  });
+// export const sendResetPasswordEmail = async (dataSend) => {
+//   let transporter = nodemailer.createTransport({
+//     host: "smtp.gmail.com",
+//     port: 587,
+//     secure: false,
+//     auth: {
+//       user: process.env.EMAIL_APP,
+//       pass: process.env.EMAIL_APP_PASSWORD,
+//     },
+//   });
 
-  let info = await transporter.sendMail({
-    from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>',
-    to: dataSend.receiverEmail,
-    subject: "Đặt lại mật khẩu - CareFlow",
-    html: getResetPasswordHTML(dataSend),
-  });
-};
+//   let info = await transporter.sendMail({
+//     from: '"CareFlow.com 🩺" <thanhthao.thptqt@gmail.com>',
+//     to: dataSend.receiverEmail,
+//     subject: "Đặt lại mật khẩu - CareFlow",
+//     html: getResetPasswordHTML(dataSend),
+//   });
+// };
 
 let getResetPasswordHTML = (dataSend) => {
   return `

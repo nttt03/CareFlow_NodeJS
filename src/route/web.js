@@ -10,12 +10,17 @@ import chatbotController  from "../controllers/chatbotController.js";
 import { checkUserJWT, verifyCaptcha } from "../middleware/JWTAction.js";
 import notificationController from "../controllers/notificationController.js";
 import StatisticController from "../controllers/StatisticController.js";
+import { googleAuth, googleCallback } from "../controllers/authController.js";
 let router = express.Router();
 // Cấu hình multer (lưu file trong bộ nhớ RAM)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 let initWebRoutes = (app) => {
+
+  router.get("/api/auth/google", googleAuth);
+  router.get("/api/auth/google/callback", googleCallback);
+
     router.get('/', homeController.getHomePage);
     router.get('/crud', homeController.getCRUD);
     router.post('/post-crud', homeController.postCRUD);
