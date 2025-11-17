@@ -1,73 +1,108 @@
 import "dotenv/config.js"
 import nodemailer from "nodemailer";
 import { google } from "googleapis";
+import { Buffer } from "buffer";
 import { Resend } from "resend";
 
 // const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Khởi tạo OAuth2 client
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
   process.env.GOOGLE_REDIRECT_URI
 );
 
-// Hàm tạo transporter đã auth bằng OAuth2
-const getGmailTransporter = async () => {
+// Khởi tạo Gmail API
+const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+
+// === Tạo email raw (có hoặc không có attachment) ===
+const createEmailRaw = ({ to, subject, html, attachments = [] }) => {
+  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
+
+  const boundary = "careflow_boundary_" + Date.now();
+
+  let messageParts = [
+    `From: "CareFlow" <${process.env.EMAIL_APP}>`,
+    `To: ${to}`,
+    "Content-Type: multipart/mixed; boundary=\"" + boundary + "\"",
+    "MIME-Version: 1.0",
+    `Subject: ${utf8Subject}`,
+    "",
+    `--${boundary}`,
+    "Content-Type: text/html; charset=utf-8",
+    "MIME-Version: 1.0",
+    "Content-Transfer-Encoding: base64",
+    "",
+    Buffer.from(html).toString("base64"),
+  ];
+
+  // Thêm attachment nếu có
+  attachments.forEach((att) => {
+    messageParts = messageParts.concat([
+      "",
+      `--${boundary}`,
+      `Content-Type: ${att.mimeType}; name="${att.filename}"`,
+      "MIME-Version: 1.0",
+      "Content-Transfer-Encoding: base64",
+      `Content-Disposition: attachment; filename="${att.filename}"`,
+      "",
+      att.content, // đã là base64 string
+    ]);
+  });
+
+  messageParts.push("", `--${boundary}--`, "");
+
+  const message = messageParts.join("\n");
+
+  return Buffer.from(message)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+};
+
+const sendGmailMessage = async (raw) => {
   oauth2Client.setCredentials({
     refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
   });
 
-  const accessToken = await oauth2Client.getAccessToken();
-
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      type: "OAuth2",
-      user: process.env.EMAIL_APP,
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-      accessToken: accessToken.token,
-    },
+  await gmail.users.messages.send({
+    userId: "me",
+    requestBody: { raw },
   });
 };
 
-let sendSimpleEmail = async (dataSend) => {
+// Email THÔNG BÁO ĐẶT LỊCH
+const sendSimpleEmail = async (dataSend) => {
   try {
-    const transporter = await getGmailTransporter();
-
-    await transporter.sendMail({
-      from: `"CareFlow" <${process.env.EMAIL_APP}>`,
+    const raw = createEmailRaw({
       to: dataSend.receiverEmail,
       subject: "Thông tin đặt lịch khám bệnh",
       html: getBodyHTMLEmail(dataSend),
     });
 
-    console.log("Email đã gửi thành công!!!");
+    await sendGmailMessage(raw);
+    console.log("Email đặt lịch đã gửi thành công!");
   } catch (error) {
-    console.error("Lỗi gửi email:", error.message);
+    console.error("Lỗi gửi email đặt lịch:", error.message);
     throw error;
   }
 };
 
-// 1. Gửi email có file đính kèm (đơn thuốc PDF/ảnh)
+// 1. GỬI EMAIL CÓ ĐÍNH KÈM (ĐƠN THUỐC PDF/ẢNH)
 let sendAttachment = async (dataSend) => {
   try {
     if (!dataSend.email || !dataSend.imgBase64) {
       throw new Error("Missing email or file data");
     }
 
-    const transporter = await getGmailTransporter();
-
-    // Xử lý base64
+    // Xử lý base64 → buffer → base64 string (Gmail API cần base64 string)
     const matches = dataSend.imgBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      throw new Error("Invalid base64 format");
-    }
+    if (!matches || matches.length !== 3) throw new Error("Invalid base64 format");
 
     const mimeType = matches[1];
     const base64Data = matches[2];
-    const buffer = Buffer.from(base64Data, "base64");
 
     let extension = "png";
     if (mimeType.includes("pdf")) extension = "pdf";
@@ -75,35 +110,31 @@ let sendAttachment = async (dataSend) => {
 
     const filename = `don-thuoc-${dataSend.patientId}-${Date.now()}.${extension}`;
 
-    const info = await transporter.sendMail({
-      from: `"CareFlow 🩺" <${process.env.EMAIL_APP}>`,
+    const raw = createEmailRaw({
       to: dataSend.email,
       subject: "Đơn thuốc & Kết quả khám bệnh",
       html: getBodyHTMLEmailRemeDy(dataSend),
       attachments: [
         {
+          mimeType,
           filename,
-          content: buffer,
-          // encoding: "base64" không cần thiết khi dùng Buffer
+          content: base64Data, // ← Gmail API nhận base64 string, không cần Buffer
         },
       ],
     });
 
-    console.log("Email đơn thuốc đã gửi thành công:", info.messageId);
-    return info;
+    await sendGmailMessage(raw);
+    console.log("Email đơn thuốc (có attachment) đã gửi thành công!");
   } catch (error) {
     console.error("Lỗi gửi email đơn thuốc:", error.message);
     throw error;
   }
 };
 
-// 2. Gửi email nhắc lịch
+// 2. GỬI EMAIL NHẮC LỊCH
 let sendReminderEmail = async (dataSend) => {
   try {
-    const transporter = await getGmailTransporter();
-
-    const info = await transporter.sendMail({
-      from: `"CareFlow 🩺" <${process.env.EMAIL_APP}>`,
+    const raw = createEmailRaw({
       to: dataSend.receiverEmail,
       subject:
         dataSend.language === "vi"
@@ -112,28 +143,25 @@ let sendReminderEmail = async (dataSend) => {
       html: getBodyHTMLEmailReminder(dataSend),
     });
 
+    await sendGmailMessage(raw);
     console.log("Email nhắc lịch đã gửi thành công!");
-    return info;
   } catch (error) {
     console.error("Lỗi gửi email nhắc lịch:", error.message);
     throw error;
   }
 };
 
-// 3. Gửi email đặt lại mật khẩu
+// 3. GỬI EMAIL ĐẶT LẠI MẬT KHẨU
 export const sendResetPasswordEmail = async (dataSend) => {
   try {
-    const transporter = await getGmailTransporter();
-
-    const info = await transporter.sendMail({
-      from: `"CareFlow 🩺" <${process.env.EMAIL_APP}>`,
+    const raw = createEmailRaw({
       to: dataSend.receiverEmail,
       subject: "Đặt lại mật khẩu - CareFlow",
       html: getResetPasswordHTML(dataSend),
     });
 
+    await sendGmailMessage(raw);
     console.log("Email đặt lại mật khẩu đã gửi thành công!");
-    return info;
   } catch (error) {
     console.error("Lỗi gửi email reset password:", error.message);
     throw error;
