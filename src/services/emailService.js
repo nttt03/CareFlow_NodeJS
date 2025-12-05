@@ -342,8 +342,11 @@ let getBodyHTMLEmailRemeDy = (dataSend) => {
             <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
                 <h2 style="color: #2c3e50;">Xin chào ${dataSend.patientName},</h2>
                 <p>Cảm ơn bạn đã đặt lịch và khám bệnh tại <strong>CareFlow.com 🩺</strong>.</p>
-                <p>Thông tin đơn thuốc/hóa đơn y tế trong file đính kèm.</p>
-
+                <p>Thông tin đơn thuốc/kết quả trong file đính kèm.</p>
+                <hr style="border: none; border-top: 1px solid #ddd;">
+                <p style="color: #777; font-size: 14px;">Mọi thắc mắc vui lòng liên hệ <strong>CareFlow.com 🩺</strong> qua email hoặc số tổng đài.</p>
+                <p>Email: CareFlow@gmail.com</p>
+                <p>Số tổng đài: 0132659874</p>
             </div>
         `;
   }
