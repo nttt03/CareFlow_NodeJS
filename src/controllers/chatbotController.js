@@ -1,6 +1,97 @@
 import chatbotService from "../services/chatbotService.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const provinceMapping = {
+  "tuyên quang": "Tuyên Quang",
+  "hà giang": "Hà Giang",
+  "cao bằng": "Cao Bằng",
+  "lai châu": "Lai Châu",
+  "lào cai": "Lào Cai",
+  "yên bái": "Yên Bái",
+  "thái nguyên": "Thái Nguyên",
+  "bắc kạn": "Bắc Kạn",
+  "điện biên": "Điện Biên",
+  "lạng sơn": "Lạng Sơn",
+  "sơn la": "Sơn La",
+  "phú thọ": "Phú Thọ",
+  "hòa bình": "Hòa Bình",
+  "vĩnh phúc": "Vĩnh Phúc",
+  "bắc ninh": "Bắc Ninh",
+  "bắc giang": "Bắc Giang",
+  "quảng ninh": "Quảng Ninh",
+  "tp. hà nội": "TP. Hà Nội",
+  "hà nội": "TP. Hà Nội",
+  "tp. hải phòng": "TP. Hải Phòng",
+  "hải dương": "Hải Dương",
+  "hưng yên": "Hưng Yên",
+  "thái bình": "Thái Bình",
+  "ninh bình": "Ninh Bình",
+  "hà nam": "Hà Nam",
+  "nam định": "Nam Định",
+  "thanh hóa": "Thanh Hóa",
+  "nghệ an": "Nghệ An",
+  "hà tĩnh": "Hà Tĩnh",
+  "quảng trị": "Quảng Trị",
+  "quảng bình": "Quảng Bình",
+  "tp. huế": "TP. Huế",
+  "tp. đà nẵng": "TP. Đà Nẵng",
+  "quảng nam": "Quảng Nam",
+  "quảng ngãi": "Quảng Ngãi",
+  "kon tum": "Kon Tum",
+  "gia lai": "Gia Lai",
+  "bình định": "Bình Định",
+  "đắk lắk": "Đắk Lắk",
+  "phú yên": "Phú Yên",
+  "khánh hòa": "Khánh Hoà",
+  "ninh thuận": "Ninh Thuận",
+  "lâm đồng": "Lâm Đồng",
+  "đắk nông": "Đắk Nông",
+  "bình thuận": "Bình Thuận",
+  "đồng nai": "Đồng Nai",
+  "bình phước": "Bình Phước",
+  "tây ninh": "Tây Ninh",
+  "long an": "Long An",
+  "tp. hồ chí minh": "TP. Hồ Chí Minh",
+  "tphcm": "TP. Hồ Chí Minh",
+  "bà rịa - vũng tàu": "Bà Rịa - Vũng Tàu",
+  "đồng tháp": "Đồng Tháp",
+  "tiền giang": "Tiền Giang",
+  "an giang": "An Giang",
+  "kiên giang": "Kiên Giang",
+  "vĩnh long": "Vĩnh Long",
+  "bến tre": "Bến Tre",
+  "trà vinh": "Trà Vinh",
+  "tp. cần thơ": "TP. Cần Thơ",
+  "sóc trăng": "Sóc Trăng",
+  "hậu giang": "Hậu Giang",
+  "cà mau": "Cà Mau",
+  "bạc liêu": "Bạc Liêu",
+};
+
+const extractProvinceName = (text) => {
+  text = text.toLowerCase();
+  for (const key in provinceMapping) {
+    if (text.includes(key)) {
+      return provinceMapping[key];
+    }
+  }
+  return null;
+};
+
+const extractProvinceNameFromText = (text) => {
+  return extractProvinceName(text);
+};
+
+const extractHospitalKeyword = (text) => {
+  const match = text.match(/bệnh viện\s*(.+?)\s*(ở|$)/i);
+  return match ? match[1].trim() : null;
+};
+
+const extractDoctorKeyword = (text) => {
+  const match = text.match(/bác sĩ\s*(.+?)\s*(ở|$)/i);
+  return match ? match[1].trim() : null;
+};
+
 // 1. Định nghĩa Tool
 const getNewAppointmentTool = {
   functionDeclarations: [
@@ -40,25 +131,57 @@ const getTopDoctorTool = {
   ],
 };
 
+// const searchHospitalTool = {
+//   functionDeclarations: [
+//     {
+//       name: "searchHospital",
+//       description: "Tìm kiếm thông tin bác sĩ, bệnh viện theo từ khóa, tỉnh",
+//       parameters: {
+//         type: "object",
+//         properties: {
+//           keyword: { type: "string", description: "Tên bác sĩ/bệnh viện" },
+//           // provinceId: { type: "integer" },
+//           // specialtyId: { type: "integer" },
+//           // hospitalId: { type: "integer" },
+//         },
+//       },
+//     },
+//   ],
+// };
+
 const searchHospitalTool = {
   functionDeclarations: [
     {
       name: "searchHospital",
-      description: "Tìm kiếm thông tin bác sĩ, bệnh viện theo từ khóa, tỉnh",
+      description: "Tìm bệnh viện theo tên hoặc theo tỉnh/thành",
       parameters: {
         type: "object",
         properties: {
-          keyword: { type: "string", description: "Tên bác sĩ/bệnh viện" },
-          // provinceId: { type: "integer" },
-          // specialtyId: { type: "integer" },
-          // hospitalId: { type: "integer" },
+          keyword: { type: "string", description: "Tên bệnh viện hoặc địa chỉ" },
+          provinceId: { type: "integer", description: "ID tỉnh thành muốn tìm" }
         },
       },
     },
   ],
 };
 
-const tools = [getNewAppointmentTool, getTopDoctorTool, searchHospitalTool];
+const searchDoctorTool = {
+  functionDeclarations: [
+    {
+      name: "searchDoctor",
+      description: "Tìm bác sĩ theo tên hoặc theo tỉnh/thành",
+      parameters: {
+        type: "object",
+        properties: {
+          keyword: { type: "string", description: "Tên bác sĩ hoặc địa chỉ" },
+          provinceId: { type: "integer", description: "ID tỉnh thành muốn tìm" }
+        },
+      },
+    },
+  ],
+};
+
+const tools = [getNewAppointmentTool, getTopDoctorTool, searchHospitalTool, searchDoctorTool];
 
 // Thực thi function
 const executeFunction = async (functionName, args) => {
@@ -75,6 +198,10 @@ const executeFunction = async (functionName, args) => {
       case "searchHospital":
         const searchResult = await chatbotService.searchAll(args);
         return JSON.stringify(searchResult);
+
+      case "searchDoctor":
+        const searchResultDoctor = await chatbotService.searchDoctor(args);
+        return JSON.stringify(searchResultDoctor);
 
       default:
         return JSON.stringify({ error: "Function not found" });
@@ -108,6 +235,12 @@ const chatWithDatabase = async (req, res) => {
     • "What should I take for a cold?"  
     How can I assist with your health today?`;
 
+    let provinceName = extractProvinceNameFromText(message);
+    let keyword = extractHospitalKeyword(message);
+    const callArgs = { keyword, provinceName };
+    let keywordDoctor = extractDoctorKeyword(message);
+    const callArgsDoctor = { keywordDoctor, provinceName };
+
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: `
@@ -115,21 +248,30 @@ const chatWithDatabase = async (req, res) => {
       Người dùng hiện tại: **${fullName || 'bạn'}** (gọi tên thân thiện, ví dụ: "bạn Minh", "chị Lan").
 
       === CÁCH XƯNG HÔ ===
-        - Luôn gọi người dùng bằng tên (nếu có): "bạn ${userName}", "chị ${userName}", "anh ${userName}".
-        - Nếu không có tên → dùng "bạn".
+        - Gọi người dùng bằng tên (nếu có) khi trò chuyện lần đầu các lượt thoại sau không cần: "bạn ${userName}", "chị ${userName}", "anh ${userName}".
+        - Nếu không có tên và các lượt thoại sau → dùng "bạn".
         - Trả lời tự nhiên, gần gũi như bác sĩ quen.
 
       === CHỦ ĐỀ ĐƯỢC PHÉP ===
       1. Nếu người dùng hỏi về:
         - Lịch khám, đặt lịch → gọi getNewAppointment(patientId)
         - Bác sĩ nổi bật → gọi getTopDoctor(limit)
-        - Tìm bệnh viện, bác sĩ, chuyên khoa → gọi searchHospital(...)
+        - Tìm bệnh viện, bệnh viện theo địa chỉ → gọi searchHospital(${callArgs})
+        - Tìm bác sĩ, bác sĩ theo địa chỉ → gọi searchDoctor(${callArgsDoctor})
       2. Nếu người dùng hỏi về:
         - Triệu chứng bệnh
         - Cách phòng ngừa
         - Thuốc, thực phẩm nên/tránh
         - Kiến thức y tế chung
         → Trả lời trực tiếp, ngắn gọn, dễ hiểu, bằng tiếng Việt (nếu language = "vi") hoặc tiếng Anh (nếu "en").
+      3. Hướng dẫn cách đặt lịch khám CareFlow
+      → Trả lời trực tiếp, mô tả các bước rõ ràng giống hệt như sau:
+          - Tìm kiếm và lựa chọn bác sĩ hoặc bệnh viện muốn khám
+          - Chọn thời gian khám phù hợp
+          - Xác nhận thông tin đặt lịch
+          - Nhấn nút "Đặt lịch"
+          - Nhận thông báo và nhắc hẹn qua email
+
       
       === CHỦ ĐỀ BỊ CẤM ===
         - Thời tiết, giá vàng, bóng đá, chính trị, giải trí, tin tức chung
