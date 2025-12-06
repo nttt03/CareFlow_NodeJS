@@ -156,84 +156,165 @@ let getTopDoctorHome = (limit) => {
     });
 };
 
-let searchAll = async ({ keyword, provinceId, specialtyId, hospitalId }) => {
-    const searchCondition = keyword
-      ? { [Op.like]: `%${keyword}%` }
-      : {};
+// let searchAll = async ({ keyword, provinceId, specialtyId, hospitalId }) => {
+//     const searchCondition = keyword
+//       ? { [Op.like]: `%${keyword}%` }
+//       : {};
 
-    const locationFilter = {
-      ...(provinceId && { provinceId }),
-    };
+//     const locationFilter = {
+//       ...(provinceId && { provinceId }),
+//     };
 
-    const doctors = await db.User.findAll({
+//     const doctors = await db.User.findAll({
+//       where: {
+//         roleId: "R2",
+//         ...locationFilter,
+//         ...(keyword && {
+//           fullName: searchCondition,
+//         }),
+//       },
+//       attributes: {
+//         exclude: ['password', 'resetPasswordExpires', 'resetPasswordToken', 'avatar'],
+//       },
+//       include: [
+//         {
+//           model: db.Doctor_Infor,
+//           as: "doctorInfor",
+//           where: {
+//             ...(specialtyId && { specialtyId }),
+//             ...(hospitalId && { hospitalId }),
+//           },
+//           include: [
+//             { model: db.Specialty, as: "specialty" },
+//             { model: db.Hospital, as: "hospital" },
+//           ],
+//           raw: true,
+//           nest: true,
+//         },
+//         { model: db.Province, as: "provinceData" },
+//       ],
+//       raw: true,
+//       nest: true,
+
+//     });
+
+//     const hospitals = await db.Hospital.findAll({
+//       where: {
+//         ...locationFilter,
+//         ...(keyword && { name: searchCondition }),
+//         ...(hospitalId && { id: hospitalId }),
+//       },
+//       attributes: {
+//         exclude: ['image'],
+//       },
+//       include: [
+//         { model: db.Province, as: "provinceData" },
+//       ],
+//       raw: true,
+//       nest: true,
+//     });
+
+//     const specialties = await db.Specialty.findAll({
+//       where: {
+//         ...(keyword && { name: searchCondition }),
+//         ...(specialtyId && { id: specialtyId }),
+//       },
+//       attributes: {
+//         exclude: ['image'],
+//       },
+//     });
+
+//     return {
+//       doctors,
+//       hospitals,
+//       specialties,
+//     };
+//   }
+
+let searchAll = async ({ keyword, provinceName }) => {
+  let provinceId;
+
+  if (provinceName) {
+    const province = await db.Province.findOne({
       where: {
-        roleId: "R2",
-        ...locationFilter,
-        ...(keyword && {
-          fullName: searchCondition,
-        }),
-      },
-      attributes: {
-        exclude: ['password', 'resetPasswordExpires', 'resetPasswordToken', 'avatar'],
-      },
-      include: [
-        {
-          model: db.Doctor_Infor,
-          as: "doctorInfor",
-          where: {
-            ...(specialtyId && { specialtyId }),
-            ...(hospitalId && { hospitalId }),
-          },
-          include: [
-            { model: db.Specialty, as: "specialty" },
-            { model: db.Hospital, as: "hospital" },
-          ],
-          raw: true,
-          nest: true,
-        },
-        { model: db.Province, as: "provinceData" },
-      ],
-      raw: true,
-      nest: true,
-
+        name: { [Op.like]: `%${provinceName}%` }
+      }
     });
-
-    const hospitals = await db.Hospital.findAll({
-      where: {
-        ...locationFilter,
-        ...(keyword && { name: searchCondition }),
-        ...(hospitalId && { id: hospitalId }),
-      },
-      attributes: {
-        exclude: ['image'],
-      },
-      include: [
-        { model: db.Province, as: "provinceData" },
-      ],
-      raw: true,
-      nest: true,
-    });
-
-    const specialties = await db.Specialty.findAll({
-      where: {
-        ...(keyword && { name: searchCondition }),
-        ...(specialtyId && { id: specialtyId }),
-      },
-      attributes: {
-        exclude: ['image'],
-      },
-    });
-
-    return {
-      doctors,
-      hospitals,
-      specialties,
-    };
+    if (province) provinceId = province.id;
   }
+
+  const searchCondition = keyword ? { [Op.like]: `%${keyword}%` } : {};
+
+  // --- Chỉ tìm bệnh viện ---
+  const hospitals = await db.Hospital.findAll({
+    where: {
+      ...(provinceId && { provinceId }), // lọc theo tỉnh nếu có
+      ...(keyword && {
+        [Op.or]: [
+          { name: searchCondition },          // tìm theo tên
+          { addressDetail: searchCondition } // tìm theo địa chỉ chi tiết
+        ]
+      }),
+    },
+    attributes: {
+      exclude: ["image"],
+    },
+    include: [
+      { model: db.Province, as: "provinceData" },
+      { model: db.CommuneUnit, as: "communeUnitData" },
+    ],
+    raw: true,
+    nest: true,
+  });
+
+  return { hospitals };
+};
+
+let searchDoctor = async ({ keyword, provinceName }) => {
+  let provinceId;
+
+  if (provinceName) {
+    const province = await db.Province.findOne({
+      where: { name: { [Op.like]: `%${provinceName}%` } },
+    });
+    if (province) provinceId = province.id;
+  }
+
+  const searchCondition = keyword ? { [Op.like]: `%${keyword}%` } : {};
+  const locationFilter = provinceId ? { provinceId } : {};
+
+  // --- Tìm bác sĩ ---
+  const doctors = await db.User.findAll({
+    where: {
+      roleId: "R2", // chỉ lấy bác sĩ
+      ...locationFilter,
+      ...(keyword && { fullName: searchCondition }), // lọc theo tên nếu có
+    },
+    attributes: {
+      exclude: ["password", "resetPasswordExpires", "resetPasswordToken", "avatar"],
+    },
+    include: [
+      {
+        model: db.Doctor_Infor,
+        as: "doctorInfor",
+        attributes: { exclude: ["price"] },
+        include: [
+          { model: db.Specialty, as: "specialty", attributes: { exclude: ["image"] } },
+          { model: db.Hospital, as: "hospital", attributes: { exclude: ["image"] } },
+        ],
+      },
+      { model: db.Province, as: "provinceData" },
+    ],
+  });
+
+  return { doctors };
+};
+
 
 export default {
   getBotReply,
   getNewAppointment,
   getTopDoctorHome,
-  searchAll
+  searchAll,
+  searchDoctor
 };
