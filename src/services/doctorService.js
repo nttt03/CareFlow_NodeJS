@@ -1,6 +1,7 @@
 import db from '../models/index.js';
 import "dotenv/config.js";
 import _ from "lodash";
+import { Sequelize } from 'sequelize';
 import emailService from '../services/emailService.js';
 import notificationService from "../services/notificationService.js";
 
@@ -420,16 +421,67 @@ let getScheduleByDateService = async (doctorId, date) => {
     })
 }
 
+// let getEtraInforDoctorById = async (doctorId) => {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+//             if (!doctorId) {
+//                 resolve({
+//                     errCode: 1,
+//                     errMessage: 'Missing required parameters'
+//                 })
+//             } else {
+//                 let data = await db.Doctor_Infor.findOne({
+//                     where: {
+//                         doctorId: doctorId
+//                     },
+//                     attributes: {
+//                         exclude: ['id', 'doctorId']
+//                     },
+
+//                     include: [
+//                         {
+//                             model: db.Specialty,
+//                             as: 'specialty',
+//                             attributes: ['name'] 
+//                         },
+//                         { model: db.Hospital, as: 'hospital', attributes: ['name', 'addressDetail', 'provinceId'],
+//                             include: [
+//                                 { model: db.Province, as: 'provinceData', attributes: ['name'] },
+//                             ]
+//                         }
+//                     ],
+//                     // include: [
+//                     //     { model: db.Datacode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
+//                     //     { model: db.Datacode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
+//                     //     { model: db.Datacode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
+
+//                     // ],
+//                     raw: false,
+//                     nest: true
+//                 })
+//                 if (!data) data = {};
+//                 resolve({
+//                     errCode: 0,
+//                     data: data
+//                 })
+//             }
+            
+//         } catch (e) {
+//             reject(e)
+//         }
+//     })
+// }
+
 let getEtraInforDoctorById = async (doctorId) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            if (!doctorId) {
-                resolve({
-                    errCode: 1,
-                    errMessage: 'Missing required parameters'
-                })
-            } else {
-                let data = await db.Doctor_Infor.findOne({
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!doctorId) {
+        resolve({
+          errCode: 1,
+          errMessage: 'Missing required parameters'
+        });
+      } else {
+        let data = await db.Doctor_Infor.findOne({
                     where: {
                         doctorId: doctorId
                     },
@@ -437,39 +489,46 @@ let getEtraInforDoctorById = async (doctorId) => {
                         exclude: ['id', 'doctorId']
                     },
 
-                    include: [
-                        {
-                            model: db.Specialty,
-                            as: 'specialty',
-                            attributes: ['name'] 
-                        },
-                        { model: db.Hospital, as: 'hospital', attributes: ['name', 'addressDetail', 'provinceId'],
-                            include: [
-                                { model: db.Province, as: 'provinceData', attributes: ['name'] },
-                            ]
-                        }
-                    ],
-                    // include: [
-                    //     { model: db.Datacode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
-                    //     { model: db.Datacode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
-                    //     { model: db.Datacode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
-
-                    // ],
-                    raw: false,
-                    nest: true
-                })
-                if (!data) data = {};
-                resolve({
-                    errCode: 0,
-                    data: data
-                })
+          include: [
+            {
+              model: db.Specialty,
+              as: 'specialty',
+              attributes: ['id', 'name']
+            },
+            {
+              model: db.Hospital,
+              as: 'hospital',
+              attributes: ['id', 'name', 'addressDetail', 'provinceId'],
+              include: [
+                { model: db.Province, as: 'provinceData', attributes: ['name'] },
+                {
+                  model: db.Hospital_Specialties,
+                  as: 'hospital_specialties',
+                  attributes: ['price', 'specialtyId'],
+                  where: { 
+                    specialtyId: Sequelize.col('Doctor_Infor.specialtyId'),
+                    hospitalId: Sequelize.col('Doctor_Infor.hospitalId')
+                   },
+                  required: false
+                }
+              ]
             }
-            
-        } catch (e) {
-            reject(e)
-        }
-    })
-}
+          ],
+          raw: false,
+          nest: true
+        });
+
+        if (!data) data = {};
+        resolve({
+          errCode: 0,
+          data
+        });
+      }
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 
 let getProfileDoctorById = (inputId) => {
     return new Promise(async (resolve, reject) => {
