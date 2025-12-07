@@ -1,6 +1,7 @@
 import db from "../models/index.js";
 import { Op } from "sequelize";
-import moment from "moment";
+import moment from "moment-timezone";
+
 await import("moment/locale/vi.js");
 moment.locale("vi");
 
@@ -31,7 +32,8 @@ let getNewAppointment = (inputId) => {
           errMessage: "Missing required parameters patientId",
         });
       } else {
-        let todayStart = new Date().setHours(0, 0, 0, 0); 
+        // let todayStart = new Date().setHours(0, 0, 0, 0); 
+        let todayStart = moment().tz("Asia/Ho_Chi_Minh").startOf("day").valueOf();
         let appointments = await db.Booking.findAll({
           where: {
             patientId: inputId,
@@ -90,10 +92,13 @@ let getNewAppointment = (inputId) => {
         appointments = appointments.map((item) => {
           return {
             ...item,
-            formattedDate: moment(Number(item.date)).format("dddd, DD/MM/YYYY"),
+            // formattedDate: moment(Number(item.date)).format("dddd, DD/MM/YYYY"),
+            formattedDate: moment(Number(item.date))
+              .tz("Asia/Ho_Chi_Minh")
+              .format("dddd, DD/MM/YYYY"),
           };
         });
-
+        console.log("dataAppointments: ", appointments)
         resolve({
           errCode: 0,
           dataAppointments: appointments,
