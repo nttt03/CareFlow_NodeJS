@@ -38,6 +38,10 @@ export default (sequelize, DataTypes) => {
         targetKey: "id",
         as: "hospitalData",
       });
+      Booking.hasOne(models.Medical_Record, {
+        foreignKey: "bookingId",
+        as: "medicalRecordData",
+      });
     }
   }
   Booking.init(
