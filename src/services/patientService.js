@@ -632,7 +632,7 @@ let getNewAppointment = (inputId) => {
             patientId: inputId,
             statusId: { [db.Sequelize.Op.in]: ["S1", "S2", "S5"] }, // Lọc statusId là 'S1' hoặc 'S2'
           },
-          attributes: ["id", "statusId", "patientId", "date", "timeType", "rejectReason"],
+          attributes: ["id", "statusId", "patientId", "date", "timeType", "rejectReason", "symptoms"],
           include: [
             {
               model: db.Doctor_Infor,
@@ -775,7 +775,8 @@ let getDoneAppointment = (inputId) => {
             patientId: inputId,
             statusId: "S4",
           },
-          attributes: ["statusId", "patientId", "date", "timeType"],
+          // attributes: ["id", "statusId", "patientId", "date", "timeType", "symptoms"],
+          attributes: ["id", "statusId", "patientId", "date", "timeType", "symptoms", "doctorId", "hospitalId"],
           include: [
             {
               model: db.Doctor_Infor,
@@ -806,6 +807,31 @@ let getDoneAppointment = (inputId) => {
                   attributes: ["valueEn", "valueVi"],
                 },
               ],
+            },
+            // Thông tin chi tiết bệnh nhân
+            {
+              model: db.User,
+              as: "patientData", // kết này có trong Booking.js
+              attributes: ["id", "email", "fullName"],
+              include: [
+                {
+                  model: db.Patient_Profile,
+                  as: "patientProfile", // liên kết này có trong User.js
+                  attributes: [
+                    "height",
+                    "weight",
+                    "underlying_diseases",
+                    "allergies",
+                    "medical_history",
+                  ],
+                },
+              ],
+            },
+            // Hồ sơ bệnh án
+            {
+              model: db.Medical_Record,
+              as: "medicalRecordData", // Tên liên kết định nghĩa trong Booking.js
+              attributes: ["description", "file"],
             },
             {
               model: db.Datacode,
