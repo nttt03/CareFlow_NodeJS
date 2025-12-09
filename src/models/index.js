@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";  // THÊM DÒNG NÀY
 import { Sequelize } from "sequelize";
-import config from "../config/config.js";
+import config from "../config/config.cjs";
 
 const env = process.env.NODE_ENV || "development";
 const dbConfig = config[env];
