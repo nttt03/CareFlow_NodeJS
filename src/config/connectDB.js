@@ -46,7 +46,7 @@ const sequelize = new Sequelize(
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log('Kết nối MySQL (Railway) thành công!');
+    console.log('Kết nối MySQL (Railway) thành công!', process.env.DB_HOST);
     await sequelize.sync({ alter: false });
   } catch (error) {
     console.error('Lỗi kết nối DB:', error.message);
