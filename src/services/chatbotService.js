@@ -296,13 +296,13 @@ let searchDoctor = async ({ keyword, provinceName }) => {
       ...(keyword && { fullName: searchCondition }), // lọc theo tên nếu có
     },
     attributes: {
-      exclude: ["password", "resetPasswordExpires", "resetPasswordToken", "avatar"],
+      exclude: ["password", "resetPasswordExpires", "resetPasswordToken", "avatar", "CCCD"],
     },
     include: [
       {
         model: db.Doctor_Infor,
         as: "doctorInfor",
-        attributes: { exclude: ["price"] },
+        attributes: { exclude: ["price", "count"] },
         include: [
           { model: db.Specialty, as: "specialty", attributes: { exclude: ["image"] } },
           { model: db.Hospital, as: "hospital", attributes: { exclude: ["image"] } },

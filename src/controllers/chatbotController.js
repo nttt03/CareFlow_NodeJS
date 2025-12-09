@@ -220,7 +220,7 @@ const chatWithDatabase = async (req, res) => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
   const offTopicResponse = language === "vi"
-      ? `Tôi là trợ lý AI của **CareFlow** – tôi chỉ hỗ trợ **thông tin lịch khám** và **tư vấn sức khỏe**.  
+      ? `Tôi là trợ lý AI của **CareFlow** – tôi chỉ hỗ trợ **thông tin lịch khám, bác sĩ, bệnh viện** và **tư vấn sức khỏe**.  
     Bạn có thể hỏi:  
     • "Lịch khám của tôi là khi nào?"  
     • "Bác sĩ nào nổi bật?"  
@@ -250,7 +250,7 @@ const chatWithDatabase = async (req, res) => {
       === CÁCH XƯNG HÔ ===
         - Gọi người dùng bằng tên (nếu có) khi trò chuyện lần đầu các lượt thoại sau không cần: "bạn ${userName}", "chị ${userName}", "anh ${userName}".
         - Nếu không có tên và các lượt thoại sau → dùng "bạn".
-        - Trả lời tự nhiên, gần gũi như bác sĩ quen.
+        - Trả lời tự nhiên, gần gũi như bác sĩ quen, (thỉnh thoảng thêm icon phù hợp nhưng lưu ý không thêm icon quá nhiều và thường xuyên).
 
       === CHỦ ĐỀ ĐƯỢC PHÉP ===
       1. Nếu người dùng hỏi về:
