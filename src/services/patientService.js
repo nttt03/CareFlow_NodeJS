@@ -736,6 +736,31 @@ let getAppointmentForNoti = (bookingId) => {
                 },
               ],
             },
+            // Thông tin chi tiết bệnh nhân
+            {
+              model: db.User,
+              as: "patientData",
+              attributes: ["id", "email", "fullName"],
+              include: [
+                {
+                  model: db.Patient_Profile,
+                  as: "patientProfile",
+                  attributes: [
+                    "height",
+                    "weight",
+                    "underlying_diseases",
+                    "allergies",
+                    "medical_history",
+                  ],
+                },
+              ],
+            },
+            // Hồ sơ bệnh án
+            {
+              model: db.Medical_Record,
+              as: "medicalRecordData",
+              attributes: ["description", "file"],
+            },
             {
               model: db.Datacode,
               as: "timeTypeDataPatient",
