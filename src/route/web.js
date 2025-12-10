@@ -102,6 +102,8 @@ let initWebRoutes = (app) => {
     router.get("/api/admin/statistics", StatisticController.getAdminStatistics);
 
     router.post("/api/chat-with-db", chatbotController.chatWithDatabase);
+    router.get("/api/conversations", chatbotController.getAllConversations);
+    router.get("/api/conversations/:id", chatbotController.getConversationDetail);
 
     // Tạo thông báo
     router.post("/api/notification", notificationController.createNotification);
