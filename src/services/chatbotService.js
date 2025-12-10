@@ -315,11 +315,124 @@ let searchDoctor = async ({ keyword, provinceName }) => {
   return { doctors };
 };
 
+const getOrCreateConversation = async (conversationId, userId, userMessageContent) => {
+    let conversation;
+    let newConversation = false;
+
+    if (conversationId) {
+        conversation = await db.Conversation.findByPk(conversationId);
+    }
+
+    // Xử lý Title
+    let titleToUse = "Cuộc trò chuyện mới";
+    if (!conversation && userMessageContent) {
+        // Nếu là cuộc trò chuyện mới, sử dụng tin nhắn đầu tiên để tạo tiêu đề.
+        // lấy 50 ký tự đầu tiên làm tiêu đề.
+        titleToUse = userMessageContent.substring(0, 50);
+        if (userMessageContent.length > 50) {
+            titleToUse += "...";
+        }
+    } else if (conversation) {
+        titleToUse = conversation.title;
+    }
+    
+    if (!conversation) {
+        conversation = await db.Conversation.create({
+            userId: userId,
+            title: titleToUse,
+            lastActive: new Date(),
+        });
+        newConversation = true;
+    }
+
+    // 3. Cập nhật thời gian hoạt động cuối cùng
+    await conversation.update({ lastActive: new Date() });
+    return { conversation, newConversation }; 
+};
+
+// Hàm lưu tin nhắn chung
+const saveMessage = async (conversationId, userId, role, content) => {
+    return await db.Message.create({
+        conversationId: conversationId,
+        userId: userId,
+        role: role,
+        content: content,
+        // isRead: (role === 'user'), // Tùy chọn, nếu muốn đánh dấu tin nhắn user đã đọc
+    });
+};
+
+// Lấy danh sách cuộc trò chuyện của user
+const getAllConversationsService = async (userId) => {
+    try {
+        const conversations = await db.Conversation.findAll({
+            where: { userId },
+            order: [["lastActive", "DESC"]],
+            include: [
+                {
+                    model: db.Message,
+                    as: "messages",
+                    limit: 1,
+                    order: [["createdAt", "DESC"]]
+                }
+            ]
+        });
+
+        return {
+            errCode: 0,
+            data: conversations
+        };
+    } catch (e) {
+        console.log(e);
+        return {
+            errCode: -1,
+            errMessage: "Service error"
+        };
+    }
+};
+
+
+// Lấy chi tiết 1 conversation
+const getConversationDetailService = async (conversationId) => {
+    try {
+        const conversation = await db.Conversation.findByPk(conversationId, {
+            include: [
+                {
+                    model: db.Message,
+                    as: "messages",
+                    order: [["createdAt", "ASC"]]
+                }
+            ]
+        });
+
+        if (!conversation) {
+            return {
+                errCode: 1,
+                errMessage: "Conversation not found"
+            };
+        }
+
+        return {
+            errCode: 0,
+            data: conversation
+        };
+
+    } catch (e) {
+        console.log(e);
+        return {
+            errCode: -1,
+            errMessage: "Service error"
+        };
+    }
+};
 
 export default {
   getBotReply,
   getNewAppointment,
   getTopDoctorHome,
   searchAll,
-  searchDoctor
+  searchDoctor,
+  getOrCreateConversation,
+  saveMessage,
+  getAllConversationsService,
+  getConversationDetailService
 };
