@@ -563,6 +563,12 @@ const chatWithDatabase = async (req, res) => {
     let keywordDoctor = extractDoctorKeyword(message);
     const callArgsDoctor = { keywordDoctor, provinceName };
 
+    const isFirstTurn = history.length === 0;
+    
+    const userSalutation = isFirstTurn && fullName
+        ? (fullName.split(' ')[0] === 'Chị' || fullName.split(' ')[0] === 'Anh' ? `${fullName.split(' ')[0]} ${userName}` : `bạn ${userName}`)
+        : 'bạn';
+
     const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash",
         systemInstruction: `
@@ -570,8 +576,9 @@ const chatWithDatabase = async (req, res) => {
         Người dùng hiện tại: **${fullName || 'bạn'}** (gọi tên thân thiện, ví dụ: "bạn Minh", "chị Lan").
 
         === CÁCH XƯNG HÔ ===
-        - Gọi người dùng bằng tên (nếu có) khi trò chuyện lần đầu các lượt thoại sau không cần: "bạn ${userName}", "chị ${userName}", "anh ${userName}".
-        - Nếu không có tên và các lượt thoại sau → dùng "bạn".
+        Người dùng hiện tại: **${fullName || 'bạn'}**.
+        === CÁCH XƯNG HÔ ===
+        - **Luôn xưng hô với người dùng là "${userSalutation}" trong câu trả lời.** (Ví dụ: "Chào bạn Minh", "Chào bạn")
         - Trả lời tự nhiên, gần gũi như bác sĩ quen, (thỉnh thoảng thêm icon phù hợp nhưng lưu ý không thêm icon quá nhiều và thường xuyên).
 
         === CHỦ ĐỀ ĐƯỢC PHÉP ===
