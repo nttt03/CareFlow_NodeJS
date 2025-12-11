@@ -1631,6 +1631,38 @@ let rejectBookingByPatient = (data) => {
   });
 };
 
+let deleteConversationService = async (conversationId, userId) => {
+    try {
+        const conversation = await db.Conversation.findOne({
+            where: {
+                id: conversationId,
+                userId: userId,
+                isDeleted: false,
+            },
+        });
+
+        if (!conversation) {
+            return {
+                errCode: 1,
+                errMessage: "Conversation not found or already deleted",
+            };
+        }
+
+        await conversation.update({ isDeleted: true });
+
+        return {
+            errCode: 0,
+            errMessage: "Conversation deleted successfully",
+        };
+    } catch (error) {
+        console.log(error);
+        return {
+            errCode: -1,
+            errMessage: "Server error",
+        };
+    }
+};
+
 export default {
   postBookApointment: postBookApointment,
   postVerifyBookApointment: postVerifyBookApointment,
@@ -1647,5 +1679,5 @@ export default {
   handleCreateReview: handleCreateReview,
   getReviewsService: getReviewsService,
   rejectBookingByPatient: rejectBookingByPatient,
-
+  deleteConversationService: deleteConversationService,
 };

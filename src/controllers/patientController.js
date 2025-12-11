@@ -232,6 +232,15 @@ let rejectBookingByPatient = async (req, res) => {
   }
 };
 
+let deleteConversation = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const result = await patientService.deleteConversationService(id, userId);
+
+    return res.status(200).json(result);
+};
+
 export default {
     postBookApointment: postBookApointment,
     postVerifyBookApointment: postVerifyBookApointment,
@@ -246,5 +255,6 @@ export default {
     getAppointmentNeedReview: getAppointmentNeedReview,
     handleCreateReview: handleCreateReview,
     getReviews: getReviews,
-    rejectBookingByPatient: rejectBookingByPatient
+    rejectBookingByPatient: rejectBookingByPatient,
+    deleteConversation: deleteConversation
 }

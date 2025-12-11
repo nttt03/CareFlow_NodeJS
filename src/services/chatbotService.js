@@ -365,7 +365,7 @@ const saveMessage = async (conversationId, userId, role, content) => {
 const getAllConversationsService = async (userId) => {
     try {
         const conversations = await db.Conversation.findAll({
-            where: { userId },
+            where: { userId, isDeleted: false },
             order: [["lastActive", "DESC"]],
             include: [
                 {
