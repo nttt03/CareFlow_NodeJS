@@ -542,7 +542,7 @@ const chatWithDatabase = async (req, res) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     const offTopicResponse = language === "vi"
-        ? `Tôi là trợ lý AI của **CareFlow** - tôi chỉ hỗ trợ **thông tin lịch khám, bác sĩ, bệnh viện** và **tư vấn sức khỏe**. 
+        ? `Tôi là trợ lý AI của **CareFlow** - tôi có thể hỗ trợ **thông tin lịch khám, bác sĩ, bệnh viện** và **tư vấn sức khỏe**. 
       Bạn có thể hỏi: 
       • "Lịch khám của tôi là khi nào?" 
       • "Bác sĩ nào nổi bật?" 
