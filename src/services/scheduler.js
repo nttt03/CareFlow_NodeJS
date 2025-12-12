@@ -2,7 +2,7 @@ import cron from "node-cron";
 import patientService from "./patientService.js";
 
 // Lập lịch chạy mỗi ngày lúc 8:00 sáng (theo UTC render 0 1 -> 8h sáng)
-cron.schedule("30 5 * * *", async () => {
+cron.schedule("55 5 * * *", async () => {
   console.log(
     "Đang chạy tác vụ nhắc nhở lịch hẹn lúc",
     new Date().toISOString()
