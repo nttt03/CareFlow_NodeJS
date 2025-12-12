@@ -280,7 +280,14 @@ let getBookingsForCalendar = async (req, res) => {
   }
 };
 
+let handleUpdateInfoPatient = async (req, res) => {
+    let data = req.body;
+    let message = await doctorService.UpdateInfoPatient(data);
+    return res.status(200).json(message)
+}
+
 export default {
+    handleUpdateInfoPatient: handleUpdateInfoPatient,
     getTopDoctorHome: getTopDoctorHome,
     getGetAllDoctor: getGetAllDoctor,
     postInforDoctor: postInforDoctor,

@@ -41,6 +41,7 @@ let initWebRoutes = (app) => {
     router.get("/api/allcode", userController.getAllCode);
     router.get("/api/allprovince", userController.getAllProvince);
 
+    router.put('/api/update-info-patient', doctorController.handleUpdateInfoPatient);
     router.get("/api/top-doctor-home", doctorController.getTopDoctorHome);
     router.get("/api/get-all-doctor", doctorController.getGetAllDoctor);
     router.get("/api/get-all-leader-hospital", doctorController.getAllLeaderHospital);

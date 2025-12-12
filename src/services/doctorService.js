@@ -1344,7 +1344,55 @@ let getBookingsForCalendarService = async (startDate, endDate, roleId, userId, h
   }
 };
 
+let UpdateInfoPatient = async (data) => {
+  try {
+    if (!data?.userId) {
+      return {
+        errCode: 1,
+        errMessage: "Missing userId",
+      };
+    }
+
+    let patient = await db.User.findOne({
+      where: { id: data.userId },
+    });
+
+    if (!patient) {
+      return {
+        errCode: 2,
+        errMessage: "Patient not found",
+      };
+    }
+
+    // Cập nhật dữ liệu
+    patient.fullName = data.fullName || patient.fullName;
+    patient.dateOfBirth = data.dateOfBirth || patient.dateOfBirth;
+    patient.phoneNumber = data.phoneNumber || patient.phoneNumber;
+    patient.gender = data.gender || patient.gender;
+
+    patient.addressDetail =
+      data.addressDetail !== undefined
+        ? data.addressDetail
+        : patient.addressDetail;
+
+    await patient.save();
+
+    return {
+      errCode: 0,
+      errMessage: "Update patient successfully",
+      data: patient,
+    };
+  } catch (e) {
+    console.log("UpdateInfoPatient Error:", e);
+    return {
+      errCode: -1,
+      errMessage: "Error from server",
+    };
+  }
+};
+
 export default {
+    UpdateInfoPatient: UpdateInfoPatient,
     getTopDoctorHome: getTopDoctorHome,
     getAllDoctors: getAllDoctors,
     saveDetailInforDoctor: saveDetailInforDoctor,
