@@ -72,6 +72,7 @@ let initWebRoutes = (app) => {
     router.post("/api/create-new-hospital", hospitalController.createHospital);
     router.get("/api/get-all-hospital", hospitalController.getAllHospital);
     router.get("/api/get-all-hospital-by-admin", hospitalController.getAllHospitalByAdmin);
+    router.get("/api/get-all-hospital-by-patient", hospitalController.getAllHospitalByPatient);
     router.get("/api/get-detail-hospital-by-id", hospitalController.getDetailHospitalById);
     router.put("/api/update-hospital-by-id", hospitalController.updateHospitalById);
     router.delete("/api/delete-hospital-by-id", hospitalController.deleteHospitalById);

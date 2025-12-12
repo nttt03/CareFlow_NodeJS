@@ -117,6 +117,68 @@ let getAllHospitalByAdmin = (page, limit, name, provinceId, status) => {
     });
 };
 
+let getAllHospitalByPatient = (page, limit, name, provinceId, status) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let offset = (page - 1) * limit;
+
+            // Điều kiện lọc
+            let where = {status: "A1"};
+            if (name) {
+                where.name = { [Op.like]: `%${name}%` };
+            }
+            if (provinceId) {
+                where.provinceId = provinceId;
+            }
+
+            let { rows, count } = await db.Hospital.findAndCountAll({
+                where,
+                offset,
+                limit,
+                order: [["createdAt", "DESC"]],
+                include: [
+                    {
+                        model: db.Province,
+                        as: "provinceData", // phải đúng alias
+                        attributes: ["id", "name"],
+                    },
+                    {
+                        model: db.Datacode,
+                        as: "statusData", // phải đúng alias
+                        attributes: ["keyMap", "valueEn", "valueVi"],
+                    },
+                ],
+                raw: true,
+                nest: true
+            });
+
+            if (rows && rows.length > 0) {
+                rows = rows.map(item => {
+                    if (item.image) {
+                        item.image = Buffer.from(item.image, 'base64').toString('binary');
+                    }
+                    return item;
+                });
+            }
+
+            resolve({
+                errCode: 0,
+                errMessage: "Get all hospital by admin successfully",
+                data: rows,
+                pagination: {
+                    total: count,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(count / limit),
+                },
+            });
+        } catch (e) {
+            console.error("Error in getAllHospitalByAdmin:", e);
+            reject(e);
+        }
+    });
+};
+
 let getDetailHospitalById = (inputId) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -515,5 +577,6 @@ export default {
     getDoctorsByHospital: getDoctorsByHospital,
     saveDoctorsForHospitalService: saveDoctorsForHospitalService,
     savePriceForHospitalService: savePriceForHospitalService,
-    saveLeaderForHospitalService: saveLeaderForHospitalService
+    saveLeaderForHospitalService: saveLeaderForHospitalService,
+    getAllHospitalByPatient: getAllHospitalByPatient
 }
