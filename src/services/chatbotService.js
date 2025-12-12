@@ -266,7 +266,6 @@ let searchAll = async ({ keyword, provinceName }) => {
     },
     include: [
       { model: db.Province, as: "provinceData" },
-      { model: db.CommuneUnit, as: "communeUnitData" },
     ],
     raw: true,
     nest: true,
