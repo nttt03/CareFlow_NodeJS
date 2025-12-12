@@ -983,12 +983,27 @@ let sendAppointmentReminder = () => {
       // const tomorrowString = tomorrow.toISOString().split('T')[0]; // Format as YYYY-MM-DD
       const { Op } = db.Sequelize;
 
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // const tomorrow = new Date();
+      // tomorrow.setDate(tomorrow.getDate() + 1);
 
       // Tính timestamp đầu ngày và cuối ngày của ngày mai
-      const startOfDay = new Date(tomorrow.setHours(0, 0, 0, 0)).getTime(); // 00:00
-      const endOfDay = new Date(tomorrow.setHours(23, 59, 59, 999)).getTime(); // 23:59
+      // const startOfDay = new Date(tomorrow.setHours(0, 0, 0, 0)).getTime(); // 00:00
+      // const endOfDay = new Date(tomorrow.setHours(23, 59, 59, 999)).getTime(); // 23:59
+
+      // Lấy thời gian hiện tại theo giờ Việt Nam (UTC+7)
+      let nowVN = new Date(Date.now() + 7 * 60 * 60 * 1000);
+
+      // Tạo object ngày mai theo giờ Việt Nam
+      let tomorrowVN = new Date(nowVN);
+      tomorrowVN.setDate(tomorrowVN.getDate() + 1);
+
+      // Đầu ngày và cuối ngày (theo VN)
+      let startOfDayVN = new Date(tomorrowVN.setHours(0, 0, 0, 0));
+      let endOfDayVN = new Date(tomorrowVN.setHours(23, 59, 59, 999));
+
+      // Chuyển về timestamp UTC để lưu DB
+      const startOfDay = startOfDayVN.getTime();
+      const endOfDay = endOfDayVN.getTime();
 
       // Find confirmed appointments for tomorrow
       let appointments = await db.Booking.findAll({
