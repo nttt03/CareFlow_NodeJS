@@ -50,6 +50,30 @@ let getAllHospitalByAdmin = async (req, res) => {
     }
 };
 
+let getAllHospitalByPatient = async (req, res) => {
+    try {
+        let { page, limit, name, provinceId, status } = req.query;
+        page = +page || 1;
+        limit = +limit || 10;
+
+        let data = await hospitalService.getAllHospitalByPatient(
+            page,
+            limit,
+            name,
+            provinceId,
+            status
+        );
+
+        return res.status(200).json(data);
+    } catch (e) {
+        console.error("Error in getAllHospitalByPatient controller:", e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: "Error from server...",
+        });
+    }
+};
+
 let getDetailHospitalById = async (req, res) => {
     try {
         let data = await hospitalService.getDetailHospitalById(req.query.id);
@@ -236,5 +260,6 @@ export default {
     getDoctorsByHospital: getDoctorsByHospital,
     saveDoctorsForHospital: saveDoctorsForHospital,
     savePriceForHospital: savePriceForHospital,
-    saveLeaderForHospital: saveLeaderForHospital
+    saveLeaderForHospital: saveLeaderForHospital,
+    getAllHospitalByPatient: getAllHospitalByPatient
 }
