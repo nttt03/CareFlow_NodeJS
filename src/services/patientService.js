@@ -973,37 +973,47 @@ let getAppointmentNeedReview = (inputId) => {
   });
 };
 
+// Hàm chuyển đổi timestamp thành chuỗi ngày/tháng/năm theo giờ Việt Nam
+const formatDateForEmail = (timestamp) => {
+    const dateObj = new Date(parseInt(timestamp));
+    const dateString = dateObj.toLocaleDateString('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+    });
+    
+    return dateString;
+};
+
 // sendAppointmentReminder
 let sendAppointmentReminder = () => {
   return new Promise(async (resolve, reject) => {
     try {
-      // Calculate the date for tomorrow
-      // const tomorrow = new Date();
-      // tomorrow.setDate(tomorrow.getDate() + 1);
-      // const tomorrowString = tomorrow.toISOString().split('T')[0]; // Format as YYYY-MM-DD
       const { Op } = db.Sequelize;
 
-      // const tomorrow = new Date();
-      // tomorrow.setDate(tomorrow.getDate() + 1);
+      // 1. Lấy thời gian hiện tại (UTC)
+      const nowUTC = Date.now();
 
-      // Tính timestamp đầu ngày và cuối ngày của ngày mai
-      // const startOfDay = new Date(tomorrow.setHours(0, 0, 0, 0)).getTime(); // 00:00
-      // const endOfDay = new Date(tomorrow.setHours(23, 59, 59, 999)).getTime(); // 23:59
+      // 2. Lấy thời điểm 00:00:00 của ngày mai (tính theo giờ VN)
+      // Lấy ngày hôm nay theo giờ VN
+      let nowVN = new Date(nowUTC + 7 * 60 * 60 * 1000);
 
-      // Lấy thời gian hiện tại theo giờ Việt Nam (UTC+7)
-      let nowVN = new Date(Date.now() + 7 * 60 * 60 * 1000);
+      // Tạo đối tượng cho ngày mai
+      let tomorrowStartVN = new Date(nowVN);
+      tomorrowStartVN.setDate(tomorrowStartVN.getDate() + 1);
 
-      // Tạo object ngày mai theo giờ Việt Nam
-      let tomorrowVN = new Date(nowVN);
-      tomorrowVN.setDate(tomorrowVN.getDate() + 1);
+      // Đặt giờ về 00:00:00 của ngày mai
+      tomorrowStartVN.setHours(0, 0, 0, 0);
 
-      // Đầu ngày và cuối ngày (theo VN)
-      let startOfDayVN = new Date(tomorrowVN.setHours(0, 0, 0, 0));
-      let endOfDayVN = new Date(tomorrowVN.setHours(23, 59, 59, 999));
+      // 3. Lấy thời điểm 23:59:59 của ngày mai (dựa trên tomorrowStartVN)
+      let tomorrowEndVN = new Date(tomorrowStartVN);
+      tomorrowEndVN.setHours(23, 59, 59, 999);
 
-      // Chuyển về timestamp UTC để lưu DB
-      const startOfDay = startOfDayVN.getTime();
-      const endOfDay = endOfDayVN.getTime();
+      // 4. Chuyển về timestamp UTC để dùng trong DB query
+      const startOfDay = tomorrowStartVN.getTime();
+      const endOfDay = tomorrowEndVN.getTime();
 
       // Find confirmed appointments for tomorrow
       let appointments = await db.Booking.findAll({
@@ -1049,11 +1059,14 @@ let sendAppointmentReminder = () => {
       });
 
       if (appointments && appointments.length > 0) {
+        console.log("appointments: ", appointments)
         // Send reminder email for each appointment
         for (let appointment of appointments) {
+          const formattedDate = formatDateForEmail(appointment.date);
           await emailService.sendReminderEmail({
             receiverEmail: appointment.patientData.email,
             patientName: appointment.patientData.fullName,
+            date: formattedDate,
             time:
               appointment.timeTypeDataPatient.valueVi ||
               appointment.timeTypeDataPatient.valueEn,

@@ -394,16 +394,15 @@ let getBodyHTMLEmailReminder = (dataSend) => {
     result = `
             <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
                 <h2 style="color: #2c3e50;">Xin chào ${dataSend.patientName},</h2>
-                <p>Đây là email nhắc nhở về lịch hẹn khám bệnh vào ngày mai của bạn tại <strong>CareFlow.com 🩺</strong>.</p>
+                <p>Đây là email nhắc nhở về lịch hẹn khám bệnh của bạn tại <strong>CareFlow.com 🩺</strong>.</p>
                 <p style="color: #fc2314ff;">Thông tin lịch hẹn:</p>
-                <p>Thời gian: ${dataSend.time} (vào ngày mai)</p>
+                <p>Thời gian: ${dataSend.date} (vào lúc: ${dataSend.time})</p>
                 <p>Bác sĩ: ${dataSend.doctorName}</p>
                 <p>Tại: ${dataSend.hospitalName}</p>
                 <p>Địa điểm: ${dataSend.hospitalAddress}</p>
                 <p>Vui lòng đến đúng giờ để được phục vụ tốt nhất.</p>
-                <p style="font-style: italic;">Nếu bạn cần thay đổi lịch hẹn, vui lòng liên hệ với chúng tôi qua email này hoặc số điện thoại 📞 0123-456-789.</p>
                 <hr style="border: none; border-top: 1px solid #ddd;">
-                <p style="color: #777; font-size: 14px;">Mọi thắc mắc vui lòng liên hệ <strong>CareFlow.com 🩺</strong>.</p>
+                <p style="color: #777; font-size: 14px;">Mọi thắc mắc vui lòng liên hệ <strong>CareFlow.com 🩺</strong> hoặc số điện thoại 📞 <strong>0123-456-789</strong>.</p>
             </div>
         `;
   }
