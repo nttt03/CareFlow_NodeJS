@@ -1,6 +1,7 @@
 import userServise from '../services/userService.js'
 import passport from "passport"
 
+const isProduction = process.env.NODE_ENV === "production";
 const googleLogin = passport.authenticate("google", { scope: ["profile", "email"], accessType: "offline", prompt: "consent" });
 
 const googleCallbackLogin = async (req, res) => {
@@ -12,8 +13,8 @@ const googleCallbackLogin = async (req, res) => {
     // Set cookie httpOnly chứa token
     res.cookie("jwt", loginData.user.access_token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // true nếu deploy HTTPS
-        sameSite: "lax", // hoặc "none nếu khác domain
+        secure: isProduction, // bắt buộc true ở production (HTTPS)
+        sameSite: isProduction ? "none" : "lax", // none cho cross-site
         maxAge: 24 * 60 * 60 * 1000, // 1 ngày
     });
 
