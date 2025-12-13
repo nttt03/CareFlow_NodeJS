@@ -11,6 +11,7 @@ import { checkUserJWT, verifyCaptcha } from "../middleware/JWTAction.js";
 import notificationController from "../controllers/notificationController.js";
 import StatisticController from "../controllers/StatisticController.js";
 import { googleAuth, googleCallback } from "../controllers/authController.js";
+import passport from "passport"
 let router = express.Router();
 // Cấu hình multer (lưu file trong bộ nhớ RAM)
 const storage = multer.memoryStorage();
@@ -20,6 +21,16 @@ let initWebRoutes = (app) => {
 
   router.get("/api/auth/google", googleAuth);
   router.get("/api/auth/google/callback", googleCallback);
+
+  router.get("/google", userController.googleLogin);
+
+    router.get(
+      "/google/callback",
+      passport.authenticate("google", { session: false, failureRedirect: "/login" }),
+      userController.googleCallbackLogin
+    );
+
+    router.get("/api/auth/me", checkUserJWT, userController.getCurrentUser);
 
     router.get('/', homeController.getHomePage);
     router.get('/crud', homeController.getCRUD);

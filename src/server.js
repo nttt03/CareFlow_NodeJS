@@ -9,6 +9,7 @@ import "./services/scheduler.js";
 import { createServer } from "http";
 import { initSocket } from "./socketIO.js";
 import dotenv from "dotenv";
+import "../src/config/passport.js"
 dotenv.config();
 
 const app = express();
@@ -40,3 +41,5 @@ initSocket(server);
 server.listen(port, () => {
   console.log(`Backend Nodejs (with Socket.IO) is running on port: ${port}`);
 });
+
+console.log("DEBUG CALLBACK URL:", process.env.GOOGLE_LOGIN_CALLBACK_URL);
