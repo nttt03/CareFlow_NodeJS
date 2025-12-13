@@ -4,27 +4,44 @@ import passport from "passport"
 const isProduction = process.env.NODE_ENV === "production";
 const googleLogin = passport.authenticate("google", { scope: ["profile", "email"], accessType: "offline", prompt: "consent" });
 
+const getRedirectByRole = (roleId) => {
+  switch (roleId) {
+    case "R1":
+      return "/system/dashboard";
+    case "R2":
+      return "/doctor/dashboard";
+    case "R3":
+      return "/home";
+    case "R4":
+      return "/leader-hospital/dashboard";
+    default:
+      return "/login";
+  }
+};
+
 const googleCallbackLogin = async (req, res) => {
   try {
     const profile = req.user; // Passport trả về profile
     const loginData = await userServise.handleGoogleLogin(profile);
 
     if (loginData.errCode === 0) {
-    // Set cookie httpOnly chứa token
-    res.cookie("jwt", loginData.user.access_token, {
+      const { access_token, roleId } = loginData.user;
+      // Set cookie httpOnly chứa token
+      res.cookie("jwt", access_token, {
         httpOnly: true,
         secure: isProduction, // bắt buộc true ở production (HTTPS)
         sameSite: isProduction ? "none" : "lax", // none cho cross-site
         maxAge: 24 * 60 * 60 * 1000, // 1 ngày
-    });
+      });
 
-    return res.redirect(`${process.env.URL_REACT}/home`);
-    } else {
-      res.redirect("/login"); // lỗi Google login
+      const redirectPath = getRedirectByRole(roleId);
+      return res.redirect(`${process.env.URL_REACT}${redirectPath}`);
     }
+
+    return res.redirect(`${process.env.URL_REACT}/login`);
   } catch (err) {
     console.error(err);
-    res.redirect("/login");
+    return res.redirect(`${process.env.URL_REACT}/login`);
   }
 };
 
