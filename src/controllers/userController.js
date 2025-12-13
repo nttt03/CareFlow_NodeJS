@@ -1,4 +1,51 @@
 import userServise from '../services/userService.js'
+import passport from "passport"
+
+const googleLogin = passport.authenticate("google", { scope: ["profile", "email"], accessType: "offline", prompt: "consent" });
+
+const googleCallbackLogin = async (req, res) => {
+  try {
+    const profile = req.user; // Passport trả về profile
+    const loginData = await userServise.handleGoogleLogin(profile);
+
+    if (loginData.errCode === 0) {
+    // Set cookie httpOnly chứa token
+    res.cookie("jwt", loginData.user.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // true nếu deploy HTTPS
+        sameSite: "lax", // hoặc "none nếu khác domain
+        maxAge: 24 * 60 * 60 * 1000, // 1 ngày
+    });
+
+    return res.redirect(`${process.env.URL_REACT}/home`);
+    } else {
+      res.redirect("/login"); // lỗi Google login
+    }
+  } catch (err) {
+    console.error(err);
+    res.redirect("/login");
+  }
+};
+
+const getCurrentUser = async (req, res) => {
+  try {
+    const data = await userServise.getCurrentUser(req.user.id);
+
+    return res.status(200).json({
+      errCode: data.errCode,
+      message: data.errMessage,
+      messageEn: data.messageEn,
+      user: data.user,
+    });
+  } catch (error) {
+    console.error("getCurrentUser error:", error);
+    return res.status(500).json({
+      errCode: -1,
+      message: "Lỗi server",
+      messageEn: "Server error",
+    });
+  }
+};
 
 let handleLogin = async (req, res) => {
     try {
@@ -257,5 +304,7 @@ export default {
     handleChangePassword: handleChangePassword,
     handleForgotPassword: handleForgotPassword,
     handleResetPassword: handleResetPassword,
-
+    googleLogin: googleLogin,
+    googleCallbackLogin: googleCallbackLogin,
+    getCurrentUser: getCurrentUser,
 }

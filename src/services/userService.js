@@ -101,6 +101,184 @@ let handleUserLogin = (email, password) => {
   });
 };
 
+const handleGoogleLogin = async (profile) => {
+  try {
+    let user = await db.User.findOne({
+      where: { email: profile.emails[0].value },
+      attributes: [
+        "id",
+        "email",
+        "roleId",
+        "password",
+        "fullName",
+        "avatar",
+        "addressDetail",
+        "phoneNumber",
+        "dateOfBirth",
+        "CCCD",
+        "positionId",
+        "status",
+        "hospitalId"
+      ],
+      raw: true, // raw: true để lấy plain object
+    });
+
+    // Nếu chưa có tài khoản → tạo mới
+    if (!user) {
+      user = await db.User.create({
+        email: profile.emails[0].value,
+        fullName: profile.displayName || "Người dùng Google",
+        avatar: profile.photos[0].value,
+        roleId: "R3",
+        status: "A1",
+      });
+
+      // Sau khi create thì query lại để lấy đúng format raw
+      user = await db.User.findOne({
+        where: { email: profile.emails[0].value },
+        attributes: [
+          "id",
+          "email",
+          "roleId",
+          "password",
+          "fullName",
+          "avatar",
+          "addressDetail",
+          "phoneNumber",
+          "dateOfBirth",
+          "CCCD",
+          "positionId",
+          "status",
+          "hospitalId"
+        ],
+        raw: true,
+      });
+    }
+
+    const payload = { id: user.id, email: user.email, roleId: user.roleId };
+    const token = createJWT(payload);
+
+    const formatAvatar = (avatar) => {
+      if (!avatar) return null;
+
+      // Case 1: Là URL từ Google (bắt đầu bằng http)
+      if (typeof avatar === "string" && avatar.startsWith("http")) {
+        return avatar; // dùng thẳng URL
+      }
+
+      // Case 2: Đã là data URL chuẩn (data:image/...)
+      if (typeof avatar === "string" && avatar.startsWith("data:image")) {
+        return avatar;
+      }
+
+      // Case 3: Là base64 thuần (không có data:image prefix) → từ DB cũ
+      if (typeof avatar === "string") {
+        // Kiểm tra xem có phải base64 thật không (dài và có ký tự base64)
+        if (avatar.trim() !== "" && avatar.length > 100) {
+          return `data:image/jpeg;base64,${avatar}`;
+        }
+      }
+
+      // Case 4: Là Buffer (từ Sequelize)
+      if (Buffer.isBuffer(avatar)) {
+        return `data:image/jpeg;base64,${avatar.toString("base64")}`;
+      }
+
+      return null;
+    };
+
+    return {
+      errCode: 0,
+      errMessage: "ok",
+      user: {
+        access_token: token,
+        id: user.id,
+        email: user.email,
+        roleId: user.roleId,
+        fullName: user.fullName || "Người dùng Google",
+        avatar: formatAvatar(user.avatar),
+        phoneNumber: user.phoneNumber || null,
+        addressDetail: user.addressDetail || null,
+        dateOfBirth: user.dateOfBirth || null,
+        CCCD: user.CCCD || null,
+        positionId: user.positionId || null,
+        status: user.status || "A1",
+        hospitalId: user.hospitalId || null,
+      },
+    };
+  } catch (error) {
+    console.error("Google login error:", error);
+    return {
+      errCode: -1,
+      errMessage: "Lỗi server khi đăng nhập Google",
+      messageEn: "Google login server error",
+    };
+  }
+};
+
+const getCurrentUser = async (userId) => {
+  try {
+    const user = await db.User.findOne({
+      where: { id: userId },
+      attributes: [
+        "id",
+        "email",
+        "roleId",
+        "fullName",
+        "avatar",
+        "addressDetail",
+        "phoneNumber",
+        "dateOfBirth",
+        "CCCD",
+        "positionId",
+        "status",
+        "hospitalId",
+      ],
+      raw: true,
+    });
+
+    if (!user) {
+      return {
+        errCode: 404,
+        errMessage: "Không tìm thấy người dùng",
+        messageEn: "User not found",
+      };
+    }
+
+    if (user && user.avatar) {
+      user.avatar = Buffer.from(user.avatar, "base64").toString(
+      "binary"
+      );
+    }
+
+    return {
+      errCode: 0,
+      errMessage: "ok",
+      user: {
+        id: user.id,
+        email: user.email,
+        roleId: user.roleId,
+        fullName: user.fullName,
+        avatar: user.avatar,
+        phoneNumber: user.phoneNumber,
+        addressDetail: user.addressDetail,
+        dateOfBirth: user.dateOfBirth,
+        CCCD: user.CCCD,
+        positionId: user.positionId,
+        status: user.status,
+        hospitalId: user.hospitalId,
+      },
+    };
+  } catch (error) {
+    console.error("authService.getCurrentUser error:", error);
+    return {
+      errCode: -1,
+      errMessage: "Lỗi server",
+      messageEn: "Server error",
+    };
+  }
+};
+
 const checkEmailExist = async (email) => {
   let user = await db.User.findOne({
     where: { email: email },
@@ -592,5 +770,6 @@ export default {
   handleChangePassword: handleChangePassword,
   handleForgotPassword: handleForgotPassword,
   handleResetPassword: handleResetPassword,
-
+  handleGoogleLogin : handleGoogleLogin,
+  getCurrentUser: getCurrentUser,
 };
