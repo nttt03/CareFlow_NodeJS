@@ -217,12 +217,18 @@ let saveDetailInforDoctor = (inputData) => {
                     raw: false
                 })
 
+                const price =
+                inputData.price === "" || inputData.price === undefined
+                  ? null
+                  : Number(inputData.price);
+
+
                 if(doctorInfor) {
                     // update
                     doctorInfor.doctorId = inputData.doctorId;
                     doctorInfor.hospitalId = inputData.hospitalId;
                     doctorInfor.specialtyId = inputData.specialtyId;
-                    doctorInfor.price = inputData.price;
+                    doctorInfor.price = price;
                     doctorInfor.note = inputData.note;
 
                     await doctorInfor.save()    
@@ -232,7 +238,7 @@ let saveDetailInforDoctor = (inputData) => {
                         doctorId: inputData.doctorId,
                         hospitalId : inputData.hospitalId,
                         specialtyId : inputData.specialtyId,
-                        price : inputData.price,
+                        price : price,
                         note : inputData.note,
 
                     })
