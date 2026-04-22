@@ -94,6 +94,7 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      refresh_token: DataTypes.TEXT,
     },
     {
       sequelize,

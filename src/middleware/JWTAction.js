@@ -59,11 +59,35 @@ export const verifyToken = (token) => {
     return decoded;
 }
 
+export const createRefreshToken = (payload) => {
+    let key = process.env.JWT_REFRESH_SECRET;
+    let token = null;
+    try {
+        token = jwt.sign(payload, key, {
+            expiresIn: process.env.JWT_REFRESH_EXPIREIN || "7d",
+        });
+    } catch (e) {
+        console.log("Lỗi sign refresh token: ", e);
+    }
+    return token;
+};
+
+export const verifyRefreshToken = (token) => {
+    let key = process.env.JWT_REFRESH_SECRET;
+    let decoded = null;
+    try {
+        decoded = jwt.verify(token, key);
+    } catch (e) {
+        console.log("Lỗi verify refresh token: ", e);
+    }
+    return decoded;
+};
+
 export const checkUserJWT = (req, res, next) => {
     if (nonSecurePaths.includes(req.path)) return next();
     let cookies = req.cookies;
-    if (cookies && cookies.jwt) {
-        let token = cookies.jwt;
+    if (cookies && cookies.access_token) {
+        let token = cookies.access_token;
         let decoded = verifyToken(token);
         if (decoded) {
             req.user = decoded; // gửi kèm thông tin user vào req

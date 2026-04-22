@@ -224,7 +224,9 @@ const getAdminStatistics = async () => {
 
     // 1. Tổng quan hệ thống
     const totalHospitals = await db.Hospital.count();
-    const totalDoctors = await db.Doctor_Infor.count();
+    const totalDoctors = await db.User.count({
+      where: { roleId: "R2" },
+    });
     const totalPatients = await db.User.count({
       where: { roleId: "R3" },
     });
