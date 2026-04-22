@@ -25,13 +25,20 @@ const googleCallbackLogin = async (req, res) => {
     const loginData = await userServise.handleGoogleLogin(profile);
 
     if (loginData.errCode === 0) {
-      const { access_token, roleId } = loginData.user;
+      const { access_token, refresh_token, roleId } = loginData.user;
       // Set cookie httpOnly chứa token
-      res.cookie("jwt", access_token, {
+      res.cookie("access_token", access_token, {
         httpOnly: true,
         secure: isProduction, // bắt buộc true ở production (HTTPS)
         sameSite: isProduction ? "none" : "lax", // none cho cross-site
-        maxAge: 24 * 60 * 60 * 1000, // 1 ngày
+        maxAge: 15 * 60 * 1000,
+      });
+
+      res.cookie("refresh_token", refresh_token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       const redirectPath = getRedirectByRole(roleId);
@@ -81,22 +88,29 @@ let handleLogin = async (req, res) => {
         // if (userData && userData.user && userData.user.access_token) {
         //     res.clearCookie("jwt");
         //     res.cookie("jwt", userData.user.access_token, {
-        //     httpOnly: true,
-        //     secure: false,          // nếu chạy HTTPS (production) thì để true
-        //     sameSite: "lax", 
-        //     domain: "localhost",
-        //     // maxAge: 60 * 60 * 1000, // 1 giờ
-        //     maxAge: 24 * 60 * 60 * 1000, // 1 ngày
+        //         httpOnly: true,
+        //         secure: process.env.NODE_ENV === "production",
+        //         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        //         // maxAge: 60 * 60 * 1000, // 1 giờ
+        //         maxAge: 24 * 60 * 60 * 1000, // 1 ngày
         //     });
         // }
-        if (userData && userData.user && userData.user.access_token) {
-            res.clearCookie("jwt");
-            res.cookie("jwt", userData.user.access_token, {
-            httpOnly: true,
-            secure: true,          // nếu chạy HTTPS (production) thì để true
-            sameSite: "none",
-            // maxAge: 60 * 60 * 1000, // 1 giờ
-            maxAge: 24 * 60 * 60 * 1000, // 1 ngày
+        if (userData && userData.user) {
+            res.clearCookie("access_token");
+            res.clearCookie("refresh_token");
+
+            res.cookie("access_token", userData.user.access_token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                maxAge: 15 * 60 * 1000, // 15 phút
+            });
+
+            res.cookie("refresh_token", userData.user.refresh_token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
             });
         }
         return res.status(200).json({
@@ -113,6 +127,66 @@ let handleLogin = async (req, res) => {
         })
     }
 }
+
+let handleRefreshToken = async (req, res) => {
+    try {
+        let refresh_token = req.cookies.refresh_token;
+
+        if (!refresh_token) {
+            return res.status(401).json({
+                errCode: 1,
+                message: "No refresh token",
+            });
+        }
+
+        let data = await userServise.handleRefreshToken(refresh_token);
+
+        if (data.errCode !== 0) {
+            return res.status(401).json(data);
+        }
+
+        // set cookie ở controller
+        res.cookie("access_token", data.access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 15 * 60 * 1000,
+        });
+
+        return res.status(200).json({
+            errCode: 0,
+            message: "Refresh token success",
+        });
+
+    } catch (e) {
+        return res.status(500).json({
+            errCode: -1,
+            message: "Server error",
+        });
+    }
+};
+
+let handleLogout = async (req, res) => {
+    try {
+        let refresh_token = req.cookies.refresh_token;
+
+        await userServise.handleLogout(refresh_token);
+
+        res.clearCookie("access_token");
+        res.clearCookie("refresh_token");
+
+        return res.status(200).json({
+            errCode: 0,
+            message: "Logout success",
+        });
+
+    } catch (e) {
+        return res.status(500).json({
+            errCode: -1,
+            message: "Server error",
+        });
+    }
+};
 
 const handleRegister = async (req, res) => {
     try {
@@ -312,6 +386,8 @@ let handleResetPassword = async (req, res) => {
 
 export default {
     handleLogin: handleLogin,
+    handleRefreshToken: handleRefreshToken,
+    handleLogout: handleLogout,
     handleRegister: handleRegister,
     handleGetAllUsers: handleGetAllUsers,
     handleCreateNewUser: handleCreateNewUser,

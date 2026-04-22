@@ -41,6 +41,8 @@ let initWebRoutes = (app) => {
     router.get('/delete-crud', homeController.deleteCRUD);
 
     router.post('/api/login', userController.handleLogin);
+    router.post('/api/logout', userController.handleLogout);
+    router.post('/api/refresh-token', userController.handleRefreshToken);
     router.post('/api/register', verifyCaptcha, userController.handleRegister);
     router.post('/api/changepassword', checkUserJWT, verifyCaptcha, userController.handleChangePassword);
     router.post('/api/forgot-password', userController.handleForgotPassword);
@@ -99,7 +101,7 @@ let initWebRoutes = (app) => {
     router.get("/api/get-appointment-for-noti", patientController.getAppointmentForNoti);
     router.get("/api/get-done-appointment", patientController.getDoneAppointment);
     router.get("/api/get-appointment-need-review", patientController.getAppointmentNeedReview);
-    router.post("/api/patient-book-appointment", patientController.postBookApointment);
+    router.post("/api/patient-book-appointment", checkUserJWT, patientController.postBookApointment);
     router.post("/api/verify-book-appointment", patientController.postVerifyBookApointment);
     router.get("/api/get-info-user-by-id", checkUserJWT, patientController.getInfoUserById);
     router.put('/api/update-info-by-user', checkUserJWT, patientController.updateInfoByUser);

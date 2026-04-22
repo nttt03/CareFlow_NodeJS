@@ -1,6 +1,6 @@
 import { where } from "sequelize";
 import db from "../models/index.js";
-import { createJWT } from "../middleware/JWTAction.js";
+import { createJWT, createRefreshToken, verifyRefreshToken } from "../middleware/JWTAction.js";
 import bcrypt from "bcryptjs";
 import {sendResetPasswordEmail} from "../services/emailService.js";
 import crypto from "crypto";
@@ -59,6 +59,12 @@ let handleUserLogin = (email, password) => {
               roleId: user.roleId,
             };
             let token = createJWT(payload);
+            let refresh_token = createRefreshToken(payload);
+            // Lưu refresh token vào DB
+            await db.User.update(
+                { refresh_token: refresh_token },
+                { where: { id: user.id } }
+            );
             if (user && user.avatar) {
               user.avatar = Buffer.from(user.avatar, "base64").toString(
                 "binary"
@@ -66,6 +72,7 @@ let handleUserLogin = (email, password) => {
             }
             userData.user = {
               access_token: token,
+              refresh_token,
               id: user.id,
               email: user.email,
               roleId: user.roleId,
@@ -99,6 +106,65 @@ let handleUserLogin = (email, password) => {
       reject(e);
     }
   });
+};
+
+let handleRefreshToken = async (refresh_token) => {
+    try {
+        // verify token
+        let decoded = verifyRefreshToken(refresh_token);
+        if (!decoded) {
+            return {
+                errCode: 2,
+                message: "Invalid refresh token",
+            };
+        }
+
+        let user = await db.User.findOne({
+            where: {
+                id: decoded.id,
+                refresh_token: refresh_token,
+            },
+        });
+
+        if (!user) {
+            return {
+                errCode: 3,
+                message: "Token not match DB",
+            };
+        }
+
+        // tạo access token mới
+        let newAccessToken = createJWT({
+            id: user.id,
+            email: user.email,
+            roleId: user.roleId,
+        });
+
+        return {
+            errCode: 0,
+            access_token: newAccessToken,
+        };
+
+    } catch (e) {
+        return {
+            errCode: -1,
+            message: "Service error",
+        };
+    }
+};
+
+let handleLogout = async (refresh_token) => {
+    try {
+        if (!refresh_token) return;
+
+        await db.User.update(
+            { refresh_token: null },
+            { where: { refresh_token } }
+        );
+
+    } catch (e) {
+        throw e;
+    }
 };
 
 const handleGoogleLogin = async (profile) => {
@@ -157,6 +223,12 @@ const handleGoogleLogin = async (profile) => {
 
     const payload = { id: user.id, email: user.email, roleId: user.roleId };
     const token = createJWT(payload);
+    const refresh_token = createRefreshToken(payload);
+    // lưu refresh token
+    await db.User.update(
+      { refresh_token },
+      { where: { id: user.id } }
+    );
 
     const formatAvatar = (avatar) => {
       if (!avatar) return null;
@@ -192,6 +264,7 @@ const handleGoogleLogin = async (profile) => {
       errMessage: "ok",
       user: {
         access_token: token,
+        refresh_token,
         id: user.id,
         email: user.email,
         roleId: user.roleId,
@@ -760,6 +833,8 @@ let handleResetPassword = async (token, newPassword) => {
 
 export default {
   handleUserLogin: handleUserLogin,
+  handleRefreshToken: handleRefreshToken,
+  handleLogout: handleLogout,
   registerNewUser: registerNewUser,
   getAllUsers: getAllUsers,
   createNewUser: createNewUser,

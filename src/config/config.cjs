@@ -7,7 +7,7 @@ const config = {
     host: "127.0.0.1",
     dialect: "mysql",
     logging: false,
-    query: { raw: true },
+    query: { raw: false },
     timezone: "+07:00"
   },
   production: {
