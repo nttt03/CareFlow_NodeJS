@@ -1,5 +1,6 @@
 // src/server.js
 import express from "express";
+import cors from "cors";
 import bodyParser from "body-parser";
 import viewEngine from "./config/viewEngine.js";
 import initWebRoutes from "./route/web.js";
@@ -15,14 +16,18 @@ dotenv.config();
 const app = express();
 
 // CORS
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", process.env.URL_REACT || "https://care-flow-nu.vercel.app");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  if (req.method === "OPTIONS") return res.status(200).end();
-  next();
-});
+app.use(cors({
+  origin: process.env.URL_REACT || "https://care-flow-nu.vercel.app",
+  credentials: true,
+}));
+// app.use((req, res, next) => {
+//   res.setHeader("Access-Control-Allow-Origin", process.env.URL_REACT || "https://care-flow-nu.vercel.app");
+//   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+//   res.setHeader("Access-Control-Allow-Credentials", true);
+//   if (req.method === "OPTIONS") return res.status(200).end();
+//   next();
+// });
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
