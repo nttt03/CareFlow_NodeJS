@@ -181,6 +181,7 @@ let handleLogout = async (req, res) => {
         });
 
     } catch (e) {
+        console.log("Logout error: ", e)
         return res.status(500).json({
             errCode: -1,
             message: "Server error",
